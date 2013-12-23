@@ -2,7 +2,7 @@
 package web
 
 import "net/http"
-import "logger"
+import "github.com/coffeehc/logger"
 import "time"
 import "os"
 import "net"
@@ -41,7 +41,7 @@ func (this *globalHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	logger.Debug("开始构建request和Response")
 	filter := newFilterChainInvocation(this.conf)
 	//TODO 此处是否需要处理一下RequseWap
-	err := filter.doFilter(req, w)
+	err := filter.DoFilter(req, w)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "出现了一个错误:\n%s", err)

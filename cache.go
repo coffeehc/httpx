@@ -1,9 +1,11 @@
 package web
 
-import "io"
-import "sync"
-import "logger"
-import "errors"
+import (
+	"errors"
+	"github.com/coffeehc/logger"
+	"io"
+	"sync"
+)
 
 type pageEntity struct {
 	io.WriterTo

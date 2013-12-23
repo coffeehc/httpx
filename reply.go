@@ -19,7 +19,7 @@ func NewReply(request *Request) *Reply {
 	reply.request = request
 	reply.header = make(map[string]string)
 	reply.statusCode = 200
-	reply.tracsport = Text
+	reply.tracsport = &Text
 	return reply
 }
 

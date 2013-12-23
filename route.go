@@ -1,7 +1,7 @@
 package web
 
 import "strings"
-import "logger"
+import "github.com/coffeehc/logger"
 
 const (
 	PATH_SEPARATOR string = "/"

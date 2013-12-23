@@ -4,14 +4,14 @@ package web
 import "net/http"
 import "regexp"
 import "fmt"
-import "logger"
+import "github.com/coffeehc/logger"
 
 type Filter interface {
-	doFilter(req *http.Request, w http.ResponseWriter, chain filterChain) error
+	DoFilter(req *http.Request, w http.ResponseWriter, chain FilterChain) error
 }
 
-type filterChain interface {
-	doFilter(req *http.Request, w http.ResponseWriter) error
+type FilterChain interface {
+	DoFilter(req *http.Request, w http.ResponseWriter) error
 }
 
 type filterChainInvocation struct {
@@ -26,7 +26,7 @@ func newFilterChainInvocation(conf *WebConfig) *filterChainInvocation {
 	return fci
 }
 
-func (this *filterChainInvocation) doFilter(req *http.Request, w http.ResponseWriter) error {
+func (this *filterChainInvocation) DoFilter(req *http.Request, w http.ResponseWriter) error {
 	this.index++
 	if this.index < len(filterDefinitions) {
 		err := filterDefinitions[this.index].doFilter(req, w, this)
@@ -58,9 +58,9 @@ type filterDefinition struct {
 func (this *filterDefinition) doFilter(req *http.Request, w http.ResponseWriter, chainInvocation *filterChainInvocation) error {
 	var err error
 	if this.pattern.MatchString(req.URL.Path) {
-		err = this.filter.doFilter(req, w, chainInvocation)
+		err = this.filter.DoFilter(req, w, chainInvocation)
 	} else {
-		err = chainInvocation.doFilter(req, w)
+		err = chainInvocation.DoFilter(req, w)
 	}
 	if err != nil {
 		return err

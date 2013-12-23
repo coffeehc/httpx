@@ -1,13 +1,7 @@
 // routes.go
 package web
 
-//import "path/filepath"
-
 import "net/http"
-
-//import "logger"
-
-//import "github.com/gorilla/mux"
 
 const (
 	METHOD_GET      string = "GET"
@@ -24,9 +18,9 @@ type Request struct {
 	wenConf *WebConfig
 }
 
-type ActionRegediter interface {
-	GetAction() *Action
-}
+//type ActionRegediter interface {
+//	GetAction() *Action
+//}
 
 type Action struct {
 	At      string
