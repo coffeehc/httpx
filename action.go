@@ -27,12 +27,12 @@ type Action struct {
 	methods []*method
 }
 
-type methodFunc func(req *Request, pathMap map[string]string) *Reply
+type ActionHandler func(req *Request, pathMap map[string]string, reply *Reply)
 
 type method struct {
-	methodHandle methodFunc
-	subAt        string
-	httpMethod   string
+	methodHandler ActionHandler
+	subAt         string
+	httpMethod    string
 }
 
 func NewAction(at string) *Action {
@@ -42,13 +42,12 @@ func NewAction(at string) *Action {
 	return action
 }
 
-func (this *Action) AddMethod(subAt string, httpMethod string, handle func(req *Request, pathMap map[string]string) *Reply) *Action {
+func (this *Action) AddMethod(subAt string, httpMethod string, handler ActionHandler) {
 	m := new(method)
 	m.subAt = subAt
 	m.httpMethod = httpMethod
-	m.methodHandle = handle
+	m.methodHandler = handler
 	this.methods = append(this.methods, m)
-	return this
 }
 
 func RegeditAction(action *Action) {

@@ -13,13 +13,15 @@ type WebConfig struct {
 	StaticDir string
 	Host      string
 	Port      int
-	isDev     bool
-	context   string //上下文
+	Context   string //上下文
+	Welcome   string
+}
+type HttpServer struct {
+	serverListener net.Listener
 }
 
-var fileServer http.Handler
-
 var dispatcher *routingDispatcher
+var fileServer fileHandler
 
 func init() {
 	logger.Debug("初始化WebServer")
@@ -27,8 +29,9 @@ func init() {
 }
 
 func (this *WebConfig) initConfig() {
-	logger.Info("初始化Web配置,未做任何事")
-	//if strings.HasPrefix(this.StaticDir,"/")
+	if this.StaticDir != "" {
+		fileServer.root = http.Dir(this.StaticDir)
+	}
 }
 
 type globalHandler struct {
@@ -37,15 +40,18 @@ type globalHandler struct {
 }
 
 func (this *globalHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	logger.Debugf("接收到一个请求,path:%s", req.RequestURI)
-	logger.Debug("开始构建request和Response")
 	filter := newFilterChainInvocation(this.conf)
-	//TODO 此处是否需要处理一下RequseWap
-	err := filter.DoFilter(req, w)
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Errorf("出现了不可处理的错误:%s", err)
+		}
+	}()
+	reply := NewReply(w)
+	err := filter.DoFilter(req, reply)
 	if err != nil {
-		w.WriteHeader(500)
-		fmt.Fprintf(w, "出现了一个错误:\n%s", err)
+		reply.Error(fmt.Sprintf("出现了不可处理的异常:\n%s\n", err), 500)
 	}
+	reply.writeResponse(w, req)
 }
 
 func newGlobalHandler(conf *WebConfig) *globalHandler {
@@ -56,20 +62,40 @@ func newGlobalHandler(conf *WebConfig) *globalHandler {
 }
 
 //启动服务器
-func Strat(conf *WebConfig) {
+func Strat(conf *WebConfig) (*HttpServer, error) {
+	httpServer := new(HttpServer)
 	logger.Info("启动服务器")
 	if conf.Port <= 0 || conf.Port >= 65536 {
 		logger.Errorf("端口号不符合要求:%d", conf.Port)
 		Stop()
 	}
 	conf.initConfig()
-	initRoute(conf)
-	fileServer = http.FileServer(http.Dir(conf.StaticDir))
-	err := http.ListenAndServe(net.JoinHostPort(conf.Host, strconv.Itoa(conf.Port)), newGlobalHandler(conf))
-	if err != nil {
-		logger.Errorf("启动服务器出现一个错误:%v", err)
-		Stop()
+	httpServer.initRoute(conf)
+	server := &http.Server{Addr: net.JoinHostPort(conf.Host, strconv.Itoa(conf.Port)), Handler: newGlobalHandler(conf)}
+	addr := server.Addr
+	if addr == "" {
+		addr = ":http"
 	}
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("创建监听端口出现一个错误:%v", err)
+	}
+	err = server.Serve(l)
+	if err != nil {
+		return nil, fmt.Errorf("启动服务器出现一个错误:%v", err)
+	}
+	httpServer.serverListener = l
+	return httpServer, nil
+}
+
+func (this *HttpServer) Close() error {
+	if this.serverListener != nil {
+		err := this.serverListener.Close()
+		if err != nil {
+			return fmt.Errorf("关闭http监听出现错误:%s", err)
+		}
+	}
+	return nil
 }
 
 func Stop() {
@@ -77,6 +103,6 @@ func Stop() {
 	os.Exit(80)
 }
 
-func initRoute(conf *WebConfig) {
+func (this *HttpServer) initRoute(conf *WebConfig) {
 
 }

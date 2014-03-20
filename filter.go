@@ -4,14 +4,13 @@ package web
 import "net/http"
 import "regexp"
 import "fmt"
-import "github.com/coffeehc/logger"
 
 type Filter interface {
-	DoFilter(req *http.Request, w http.ResponseWriter, chain FilterChain) error
+	DoFilter(req *http.Request, reply *Reply, chain FilterChain) error
 }
 
 type FilterChain interface {
-	DoFilter(req *http.Request, w http.ResponseWriter) error
+	DoFilter(req *http.Request, reply *Reply) error
 }
 
 type filterChainInvocation struct {
@@ -26,28 +25,23 @@ func newFilterChainInvocation(conf *WebConfig) *filterChainInvocation {
 	return fci
 }
 
-func (this *filterChainInvocation) DoFilter(req *http.Request, w http.ResponseWriter) error {
+func (this *filterChainInvocation) DoFilter(req *http.Request, reply *Reply) (err error) {
 	this.index++
+	defer func() {
+		if recoverErr := recover(); recoverErr != nil {
+			//TODO 捕获异常后的处理
+			err = fmt.Errorf("处理异常:%s", recoverErr)
+			return
+		}
+	}()
 	if this.index < len(filterDefinitions) {
-		err := filterDefinitions[this.index].doFilter(req, w, this)
-		if err != nil {
-			return err
-		}
+		err = filterDefinitions[this.index].doFilter(req, reply, this)
 	} else {
-		request := new(Request)
-		request.Request = req
+		request := &Request{Request: req}
+		dispatcher.dispatch(request, reply)
 		//TODO 这里其实可以插入一个缓冲器,保证在一定时间内访问过高的uri进行缓冲
-		reply := dispatcher.dispatch(request)
-		if reply == nil {
-			reply = NewReply(request).NoFindPage()
-		}
-		err := reply.writeResponse(w, req)
-		if err != nil {
-			logger.Errorf("出现一个错误%s", err)
-			return err
-		}
 	}
-	return nil
+	return
 }
 
 type filterDefinition struct {
@@ -55,17 +49,13 @@ type filterDefinition struct {
 	filter  Filter
 }
 
-func (this *filterDefinition) doFilter(req *http.Request, w http.ResponseWriter, chainInvocation *filterChainInvocation) error {
-	var err error
+func (this *filterDefinition) doFilter(req *http.Request, reply *Reply, chainInvocation *filterChainInvocation) (err error) {
 	if this.pattern.MatchString(req.URL.Path) {
-		err = this.filter.DoFilter(req, w, chainInvocation)
+		err = this.filter.DoFilter(req, reply, chainInvocation)
 	} else {
-		err = chainInvocation.DoFilter(req, w)
+		err = chainInvocation.DoFilter(req, reply)
 	}
-	if err != nil {
-		return err
-	}
-	return nil
+	return
 }
 
 var filterDefinitions []*filterDefinition

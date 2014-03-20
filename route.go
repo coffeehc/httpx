@@ -1,6 +1,7 @@
 package web
 
 import "strings"
+
 import "github.com/coffeehc/logger"
 
 const (
@@ -17,14 +18,14 @@ func newRoutingDispatcher() *routingDispatcher {
 	return r
 }
 
-func (this *routingDispatcher) dispatch(request *Request) *Reply {
+func (this *routingDispatcher) dispatch(request *Request, reply *Reply) {
 	uri := request.URL.Path
-	logger.Debugf("开始匹配URI:%s", uri)
 	r := this.get(uri)
 	if r == nil {
-		return nil
+		fileServer.handler(request, nil, reply)
+		return
 	}
-	return r.doMethod(request, r)
+	r.doMethod(request, reply)
 }
 
 type route struct {
@@ -32,25 +33,23 @@ type route struct {
 	matcher   pathMatcher
 	headless  bool
 	extension bool
-	methods   map[string]methodFunc
+	handlers  map[string]ActionHandler
 }
 
-func (this *route) callAction(req *Request, r *route, pathMap map[string]string) *Reply {
-	tuple := this.methods[req.Method]
-	var replay *Reply
-	if tuple != nil {
-		logger.Debug("开始执行真正的方法")
-		//TODO解析URLValue
-		replay = tuple(req, pathMap)
+func (this *route) callAction(req *Request, reply *Reply, pathMap map[string]string) {
+	handler := this.handlers[req.Method]
+	if handler != nil {
+		handler(req, pathMap, reply)
 	} else {
-		replay = NewReply(req).NoFindPage()
+		reply.NoFindPage(req)
 	}
-	return replay
+	return
 }
 
-func (this *route) doMethod(req *Request, r *route) *Reply {
+func (this *route) doMethod(req *Request, reply *Reply) {
 	matches := this.matcher.findMatches(req.URL.Path)
-	return this.callAction(req, r, matches)
+	//不处理Form里面的值，由程序自己处理掉
+	this.callAction(req, reply, matches)
 }
 
 func (this *route) isHeadless() bool {
@@ -58,17 +57,16 @@ func (this *route) isHeadless() bool {
 }
 
 func newRoute(uri string, matcher pathMatcher, headless, extension bool, action *Action) *route {
-	logger.Debugf("创建一个新的RouteTuple:%s", uri)
 	rt := new(route)
 	rt.uri = uri
 	rt.matcher = matcher
 	rt.headless = headless
 	rt.extension = extension
 	methods := action.methods
-	rt.methods = make(map[string]methodFunc, len(methods))
+	rt.handlers = make(map[string]ActionHandler, len(methods))
 	for _, method := range methods {
 		logger.Debugf("注册了[%s]的[%s]方法", uri, method.httpMethod)
-		rt.methods[method.httpMethod] = method.methodHandle
+		rt.handlers[method.httpMethod] = method.methodHandler
 	}
 	return rt
 }
@@ -85,7 +83,6 @@ type pathMatcherChain struct {
 
 func newPathMatcherChain(path string) *pathMatcherChain {
 	pmc := new(pathMatcherChain)
-	logger.Debugf("创建一个新的PathMatcherChain:%s", path)
 	pmc.path = toMatchChain(path)
 	return pmc
 }
@@ -127,7 +124,6 @@ func (this *pathMatcherChain) findMatches(incoming string) map[string]string {
 
 func toMatchChain(path string) []pathMatcher {
 	pieces := strings.Split(path, PATH_SEPARATOR)
-	logger.Debugf("分解Path:%v", pieces)
 	matchers := make([]pathMatcher, len(pieces))
 	for i, piece := range pieces {
 		if strings.HasPrefix(piece, ":") {
@@ -194,7 +190,6 @@ func (this *routingDispatcher) serviceAt(action *Action) {
 
 func (this *routingDispatcher) at(uri string, action *Action, headless bool) {
 	key := firstPathElement(uri)
-	logger.Debugf("开始处理%s开头的路径At", key)
 	rt := newRoute(uri, newPathMatcherChain(uri), headless, false, action)
 	//需要加锁么
 	if strings.HasPrefix(key, ":") {
@@ -202,7 +197,6 @@ func (this *routingDispatcher) at(uri string, action *Action, headless bool) {
 	} else {
 		rts := this.routes[key]
 		if rts == nil {
-			logger.Debugf("没有找到%s对应的routes数组,新建一个", key)
 			rts = make([]*route, 0)
 		}
 		rts = append(rts, rt)
@@ -213,18 +207,14 @@ func (this *routingDispatcher) at(uri string, action *Action, headless bool) {
 
 func (this *routingDispatcher) get(uri string) *route {
 	key := firstPathElement(uri)
-	logger.Debugf("获取了Path的第一个路径:%s", key)
 	r := this.routes[key]
-	logger.Debugf("找到了%d", len(r))
 	if r != nil {
 		for _, rt := range r {
 			if rt.matcher.matches(uri) {
-				logger.Debugf("找到了对应Route,%v", r)
 				return rt
 			}
 		}
 	}
-	logger.Debugf("没有找到对应的route,返回空")
 	return nil
 }
 
