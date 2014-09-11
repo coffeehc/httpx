@@ -1,55 +1,66 @@
 // routes.go
 package web
 
-import "net/http"
+import "path"
 
 const (
-	METHOD_GET      string = "GET"
-	METHOD_POST     string = "POST"
-	METHOD_PUT      string = "PUT"
-	METHOD_HEAD     string = "HEAD"
-	METHOD_DELETE   string = "DELETE"
-	METHOD_OPTIONSE string = "OPTIONSE"
-	METHOD_TRACE    string = "TRACE"
+	REQUEST_METHOD_GET      string = "GET"
+	REQUEST_METHOD_POST     string = "POST"
+	REQUEST_METHOD_PUT      string = "PUT"
+	REQUEST_METHOD_HEAD     string = "HEAD"
+	REQUEST_METHOD_DELETE   string = "DELETE"
+	REQUEST_METHOD_OPTIONSE string = "OPTIONSE"
+	REQUEST_METHOD_TRACE    string = "TRACE"
 )
 
-type Request struct {
-	*http.Request
-	wenConf *WebConfig
+func HTTP_GET(uri string, handler interface{}) {
+	dispatcher.at(uri, REQUEST_METHOD_GET, handler)
+}
+func HTTP_POST(uri string, handler interface{}) {
+	dispatcher.at(uri, REQUEST_METHOD_POST, handler)
+}
+func HTTP_PUT(uri string, handler interface{}) {
+	dispatcher.at(uri, REQUEST_METHOD_PUT, handler)
+}
+func HTTP_HEAD(uri string, handler interface{}) {
+	dispatcher.at(uri, REQUEST_METHOD_HEAD, handler)
+}
+func HTTP_DELETE(uri string, handler interface{}) {
+	dispatcher.at(uri, REQUEST_METHOD_DELETE, handler)
+}
+func HTTP_OPTIONSE(uri string, handler interface{}) {
+	dispatcher.at(uri, REQUEST_METHOD_OPTIONSE, handler)
+}
+func HTTP_TRACE(uri string, handler interface{}) {
+	dispatcher.at(uri, REQUEST_METHOD_TRACE, handler)
 }
 
-//type ActionRegediter interface {
-//	GetAction() *Action
-//}
-
-type Action struct {
-	At      string
-	methods []*method
+type HttpGroup struct {
+	baseUri string
 }
 
-type ActionHandler func(req *Request, pathMap map[string]string, reply *Reply)
-
-type method struct {
-	methodHandler ActionHandler
-	subAt         string
-	httpMethod    string
+func NewHttpGroup(baseUri string) *HttpGroup {
+	return &HttpGroup{baseUri: baseUri}
 }
 
-func NewAction(at string) *Action {
-	action := new(Action)
-	action.At = at
-	action.methods = make([]*method, 0)
-	return action
+func (this *HttpGroup) GET(uri string, handler interface{}) {
+	dispatcher.at(path.Join(this.baseUri, uri), REQUEST_METHOD_GET, handler)
 }
-
-func (this *Action) AddMethod(subAt string, httpMethod string, handler ActionHandler) {
-	m := new(method)
-	m.subAt = subAt
-	m.httpMethod = httpMethod
-	m.methodHandler = handler
-	this.methods = append(this.methods, m)
+func (this *HttpGroup) POST(uri string, handler interface{}) {
+	dispatcher.at(path.Join(this.baseUri, uri), REQUEST_METHOD_POST, handler)
 }
-
-func RegeditAction(action *Action) {
-	dispatcher.serviceAt(action)
+func (this *HttpGroup) PUT(uri string, handler interface{}) {
+	dispatcher.at(path.Join(this.baseUri, uri), REQUEST_METHOD_PUT, handler)
+}
+func (this *HttpGroup) HEAD(uri string, handler interface{}) {
+	dispatcher.at(path.Join(this.baseUri, uri), REQUEST_METHOD_HEAD, handler)
+}
+func (this *HttpGroup) DELETE(uri string, handler interface{}) {
+	dispatcher.at(path.Join(this.baseUri, uri), REQUEST_METHOD_DELETE, handler)
+}
+func (this *HttpGroup) OPTIONSE(uri string, handler interface{}) {
+	dispatcher.at(path.Join(this.baseUri, uri), REQUEST_METHOD_OPTIONSE, handler)
+}
+func (this *HttpGroup) TRACE(uri string, handler interface{}) {
+	dispatcher.at(path.Join(this.baseUri, uri), REQUEST_METHOD_TRACE, handler)
 }

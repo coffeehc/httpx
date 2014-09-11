@@ -14,16 +14,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/coffeehc/logger"
 )
 
 const (
 	TimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 	sniffLen   = 512
 )
-
-type fileHandler struct {
-	root http.FileSystem
-}
 
 type countingWriter int64
 
@@ -47,37 +45,46 @@ func (r httpRange) mimeHeader(contentType string, size int64) textproto.MIMEHead
 	}
 }
 
-func (this *fileHandler) handler(req *Request, pathMap map[string]string, reply *Reply) {
+func FileHandler(req *http.Request, reply *Reply) {
 	defer func() {
 		if err := recover(); err != nil {
 			reply.Error(fmt.Sprintf("%s", err), 500)
 		}
 	}()
 	upath := req.URL.Path
+	if upath == "/" || upath == "" {
+		if p, ok := reply.GetInterface(Bind_Key_Welcome).(string); ok {
+			upath = p
+		}
+	}
 	if !strings.HasPrefix(upath, "/") {
 		upath = "/" + upath
 		req.URL.Path = upath
 	}
-	serveFile(reply, req, this.root, path.Clean(upath))
+	serveFile(reply, req, path.Clean(upath))
 }
 
-func serveFile(reply *Reply, r *Request, fs http.FileSystem, name string) {
-	f, err := fs.Open(name)
-	if err != nil {
+func serveFile(reply *Reply, r *http.Request, name string) {
+	if fs, ok := reply.GetInterface(Bind_Key_StaticResource).(http.FileSystem); ok {
+		f, err := fs.Open(name)
+		if err != nil {
+			logger.Debug("获取文件失败:%s", name)
+			reply.NoFindPage(r)
+			return
+		}
+		d, err := f.Stat()
+		if err != nil {
+			reply.NoFindPage(r)
+			return
+		}
+		sizeFunc := func() (int64, error) { return d.Size(), nil }
+		serveContent(reply, r, d.Name(), d.ModTime(), sizeFunc, f)
+	} else {
 		reply.NoFindPage(r)
-		return
 	}
-	//defer f.Close()
-	d, err := f.Stat()
-	if err != nil {
-		reply.NoFindPage(r)
-		return
-	}
-	sizeFunc := func() (int64, error) { return d.Size(), nil }
-	serveContent(reply, r, d.Name(), d.ModTime(), sizeFunc, f)
 }
 
-func localRedirect(reply *Reply, r *Request, newPath string) {
+func localRedirect(reply *Reply, r *http.Request, newPath string) {
 	if q := r.URL.RawQuery; q != "" {
 		newPath += "?" + q
 	}
@@ -85,7 +92,7 @@ func localRedirect(reply *Reply, r *Request, newPath string) {
 	reply.SetStatusCode(http.StatusMovedPermanently)
 }
 
-func checkLastModified(reply *Reply, r *Request, modtime time.Time) bool {
+func checkLastModified(reply *Reply, r *http.Request, modtime time.Time) bool {
 	if modtime.IsZero() {
 		return false
 	}
@@ -100,7 +107,7 @@ func checkLastModified(reply *Reply, r *Request, modtime time.Time) bool {
 	return false
 }
 
-func checkETag(reply *Reply, r *Request) (rangeReq string, done bool) {
+func checkETag(reply *Reply, r *http.Request) (rangeReq string, done bool) {
 	etag := reply.Header().Get("Etag")
 	rangeReq = r.Header.Get("Range")
 	if ir := r.Header.Get("If-Range"); ir != "" && ir != etag {
@@ -124,7 +131,7 @@ func checkETag(reply *Reply, r *Request) (rangeReq string, done bool) {
 	return rangeReq, false
 }
 
-func serveContent(reply *Reply, r *Request, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker) {
+func serveContent(reply *Reply, r *http.Request, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker) {
 	if checkLastModified(reply, r, modtime) {
 		closeFileReader(content)
 		return
@@ -229,7 +236,7 @@ func serveContent(reply *Reply, r *Request, name string, modtime time.Time, size
 		}
 	}
 	reply.SetStatusCode(code)
-	if r.Method != METHOD_HEAD {
+	if r.Method != REQUEST_METHOD_HEAD {
 		reply.WithReader(sendContent, sendSize)
 	}
 }

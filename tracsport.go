@@ -13,11 +13,11 @@ type json_Tracsport struct {
 }
 
 func (this json_Tracsport) ContentType() string {
-	return "application/json; charset=utf-8"
+	return CONTEXTTYPE_JSON_RES
 }
 
 func (this text_Tracsport) ContentType() string {
-	return "text/plain; charset=utf-8"
+	return CONTEXTTYPE_PLAIN_RES
 }
 
 type html_Tracsport struct {
@@ -25,7 +25,7 @@ type html_Tracsport struct {
 }
 
 func (this html_Tracsport) ContentType() string {
-	return "text/html; charset=utf-8"
+	return CONTEXTTYPE_HTML_RES
 }
 
 var Text text_Tracsport

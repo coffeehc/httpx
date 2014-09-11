@@ -3,15 +3,17 @@ package web
 import (
 	"bytes"
 	"fmt"
+	"html/template"
+	"inject"
 	"io"
 	"net/http"
 	"strings"
-	"text/template"
 
 	"github.com/coffeehc/logger"
 )
 
 type Reply struct {
+	inject.Injector
 	data       io.Reader
 	header     http.Header
 	tracsport  Tracsport
@@ -21,13 +23,22 @@ type Reply struct {
 	cookies  []*http.Cookie
 }
 
-func NewReply(w http.ResponseWriter) *Reply {
+func NewReply(w http.ResponseWriter, parent inject.Injector) *Reply {
 	reply := new(Reply)
+	reply.Injector = inject.NewChild(parent)
 	reply.header = w.Header()
 	reply.statusCode = 200
-	reply.tracsport = &Text
+	reply.tracsport = Html
 	reply.cookies = make([]*http.Cookie, 0)
 	return reply
+}
+
+func (this *Reply) GetSession() Session {
+	if session, ok := this.GetInterface(Bind_Key_Session).(Session); ok {
+		return session
+	} else {
+		return nil
+	}
 }
 
 func (this *Reply) AddCookie(cookie *http.Cookie) {
@@ -39,14 +50,34 @@ func (this *Reply) DelCookie(cookie *http.Cookie) {
 	this.AddCookie(cookie)
 }
 
-func (this *Reply) WithTemplate(data interface{}, template template.Template) *Reply {
-	reader, wtiter := io.Pipe()
-	go func() {
-		defer wtiter.Close()
-		template.Execute(wtiter, data)
-	}()
-	this.sendSize = -1
-	this.data = reader
+func (this *Reply) getTemplate(name string) *template.Template {
+	baseTemp, ok := this.GetInterface(Bind_Key_Template).(*template.Template)
+	if ok {
+		if isProjectModel := this.GetInterface(Bind_Key_IsProjectModel).(bool); isProjectModel {
+			return baseTemp.Lookup(name)
+		} else {
+			baseTemp = template.New("temp")
+			return loadTemplate(this.GetInterface(Bind_Key_TemplateDir).(string), name, baseTemp)
+		}
+	}
+	return nil
+}
+
+func (this *Reply) WithTemplate(data interface{}, name string) *Reply {
+	template := this.getTemplate(name)
+	if template == nil {
+		logger.Debug("没有找到对应模版文件:%s", name)
+		return this
+	}
+	buf := new(bytes.Buffer)
+	t, err := template.Clone()
+	if err != nil {
+		logger.Error("模版克隆失败:%s", err)
+		return this
+	}
+	t.Execute(buf, data)
+	this.sendSize = (int64)(buf.Len())
+	this.data = buf
 	return this
 }
 
@@ -118,13 +149,13 @@ func (this *Reply) noContent() *Reply {
 /*
  * 生成一个找不到页面的Replay
  */
-func (this *Reply) NoFindPage(request *Request) *Reply {
+func (this *Reply) NoFindPage(request *http.Request) *Reply {
 	this.statusCode = 404
 	this.WithString(fmt.Sprintf("%s没有找到", request.RequestURI))
 	return this
 }
 
-func (this *Reply) Forward(request *Request, uri string) {
+func (this *Reply) Forward(request *http.Request, uri string) {
 	request.URL.Path = uri
 	dispatcher.dispatch(request, this)
 }
@@ -162,14 +193,10 @@ func (this *Reply) writeResponse(w http.ResponseWriter, req *http.Request) {
 			}
 		}()
 		w.WriteHeader(code)
-		var err error
 		if this.sendSize < 0 {
-			_, err = io.Copy(w, reader)
+			io.Copy(w, reader)
 		} else {
-			_, err = io.CopyN(w, reader, this.sendSize)
-		}
-		if err != nil {
-			logger.Errorf("出现了不可挽回的错误;%s", err)
+			io.CopyN(w, reader, this.sendSize)
 		}
 	}
 }
