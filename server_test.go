@@ -1,24 +1,4 @@
-WEB
-==
-
-把自己的java写的web框架改了撑了golong的,比较轻量级
-
-## Web配置
-
-```go
-type ServerConfig struct {
-	Addr           string
-	Port           int
-	ReadTimeout    time.Duration // 读的最大Timeout时间
-	WriteTimeout   time.Duration // 写的最大Timeout时间
-	MaxHeaderBytes int           // 请求头的最大长度
-	TLSConfig      *tls.Config   // 配置TLS
-}
-```
-
-## 例子
-
-```go
+// server_test
 package web
 
 import (
@@ -46,10 +26,3 @@ func Service(request *http.Request, param map[string]string, reply *Reply) {
 func testService(request *http.Request, param map[string]string, reply *Reply) {
 	reply.With(param["name"])
 }
-```
-
-
-
-
-
-
