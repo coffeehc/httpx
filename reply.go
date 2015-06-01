@@ -17,10 +17,19 @@ type Reply struct {
 	redirect    bool
 	transport   Transport
 	contentType string
+	openStream  bool
+	w           http.ResponseWriter
 }
 
-func newReply() *Reply {
-	return &Reply{statusCode: 200, transport: StringTransport{}, headers: make(map[string]string, 0), cookies: make([]http.Cookie, 0)}
+func newReply(w http.ResponseWriter) *Reply {
+	return &Reply{statusCode: 200, transport: StringTransport{}, headers: make(map[string]string, 0), cookies: make([]http.Cookie, 0), w: w}
+}
+
+func (this *Reply) OpenStream() *Stream {
+	this.SetContentType("text/plain")
+	this.writeHeader()
+	this.openStream = true
+	return &Stream{w: this.w}
 }
 
 func (this *Reply) GetStatusCode() int {
@@ -65,26 +74,14 @@ func (this *Reply) As(transport Transport) *Reply {
 	return this
 }
 
-func (this *Reply) write(responseWriter http.ResponseWriter) {
-	header := responseWriter.Header()
-	for key, value := range this.headers {
-		header.Set(key, value)
-	}
-	for _, cookie := range this.cookies {
-		header.Set("Set-Cookie", cookie.String())
-	}
-	responseWriter.WriteHeader(this.statusCode)
-	if this.contentType != "" {
-		header.Set("Content-Type", this.contentType)
-	} else {
-		header.Set("Content-Type", this.transport.ContentType())
-	}
+func (this *Reply) write() {
+	this.writeHeader()
 	if this.redirect {
 		return
 	}
 	if this.data != nil {
 		if reader, ok := this.data.(io.Reader); ok {
-			_, err := bufio.NewReader(reader).WriteTo(responseWriter)
+			_, err := bufio.NewReader(reader).WriteTo(this.w)
 			if err != nil {
 				logger.Error("数据输出出现错误:%s", err)
 			}
@@ -92,7 +89,23 @@ func (this *Reply) write(responseWriter http.ResponseWriter) {
 				closer.Close()
 			}
 		} else {
-			this.transport.Out(responseWriter, this.data)
+			this.transport.Out(this.w, this.data)
 		}
 	}
+}
+
+func (this *Reply) writeHeader() {
+	header := this.w.Header()
+	for key, value := range this.headers {
+		header.Set(key, value)
+	}
+	for _, cookie := range this.cookies {
+		header.Set("Set-Cookie", cookie.String())
+	}
+	if this.contentType != "" {
+		header.Set("Content-Type", this.contentType)
+	} else {
+		header.Set("Content-Type", this.transport.ContentType())
+	}
+	this.w.WriteHeader(this.statusCode)
 }
