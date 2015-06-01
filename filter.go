@@ -38,5 +38,5 @@ func AccessLogFilter(request *http.Request, reply *Reply, chain FilterChain) {
 	t1 := time.Now()
 	chain(request, reply)
 	delay := time.Since(t1)
-	logger.Info("访问时间[%s]处理时长[%s]地址[%s]返回状态[%d]", t1, delay, request.RemoteAddr, reply.GetStatusCode())
+	logger.Info("%s\t%s\t%s\t%s\t%d", t1, delay, request.RemoteAddr, request.URL, reply.GetStatusCode())
 }

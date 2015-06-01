@@ -14,7 +14,7 @@ func TestServer(t *testing.T) {
 	server.Regedit("/a/123/{name}", GET, testService)
 	server.AddFilter("/*", AccessLogFilter)
 	server.Start()
-	time.Sleep(time.Second * 20)
+	time.Sleep(time.Second * 15)
 	server.Stop()
 }
 

@@ -59,8 +59,8 @@ func (route *routingDispatcher) handle(request *http.Request, reply *Reply) {
 	}()
 	handler := route.matcher.getActionHandler(request.URL.Path, strings.ToUpper(request.Method))
 	if handler == nil {
-		reply.SetCode(404).With("404:页面不存在")
-		logger.Error("没有找到[%s]对应的Handler", request.URL.Path)
+		reply.SetCode(404).With("404:you are lost")
+		logger.Error("Not found Handler for [%s]", request.URL.Path)
 		return
 	}
 	handler.doAction(request, reply)

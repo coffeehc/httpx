@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bradfitz/http2"
 	"github.com/coffeehc/logger"
 )
 
@@ -45,7 +46,8 @@ type ServerConfig struct {
 	WriteTimeout   time.Duration // 写的最大Timeout时间
 	MaxHeaderBytes int           // 请求头的最大长度
 	TLSConfig      *tls.Config   // 配置TLS
-	serverAddr     *net.TCPAddr
+	serverAddr     string
+	OpenHttp2      bool //是否开启http2
 }
 
 type Server struct {
@@ -57,35 +59,77 @@ type Server struct {
 //创建一个Server,参数可以为空,默认使用0.0.0.0:8888
 func NewServer(serverConfig *ServerConfig) *Server {
 	if serverConfig == nil {
-		serverConfig = &ServerConfig{Addr: "0.0.0.0", Port: 8888}
+		serverConfig = &ServerConfig{Addr: "0.0.0.0"}
+	}
+	if serverConfig.Port == 0 {
+		serverConfig.Port = 8888
+	}
+	if serverConfig.OpenHttp2 && serverConfig.TLSConfig == nil {
+		logger.Error("open http2 need TLS support")
+		return nil
 	}
 	addr := net.JoinHostPort(serverConfig.Addr, strconv.Itoa(serverConfig.Port))
 	serverAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
-		logger.Error("设置的服务器地址[%s]无法解析:%s", addr, err)
+		logger.Error("can't parse the server addr [%s],cause:%s", addr, err)
 		return nil
 	}
-	serverConfig.serverAddr = serverAddr
+	serverConfig.serverAddr = serverAddr.String()
 	return &Server{router: newRoutingDispatcher(), config: serverConfig}
 }
 
 func (this *Server) Start() error {
+	logger.Debug("serverConfig is %#v", this.config)
 	conf := this.config
-	server := &http.Server{Handler: http.HandlerFunc(this.serverHttpHandler), ReadTimeout: conf.ReadTimeout, WriteTimeout: conf.WriteTimeout, MaxHeaderBytes: conf.MaxHeaderBytes, TLSConfig: conf.TLSConfig}
-	var err error
-	this.listener, err = net.ListenTCP("tcp", conf.serverAddr)
-	if err != nil {
-		return errors.New(logger.Error("监听地址[%s]失败:%s", conf.serverAddr, err))
+	server := &http.Server{Handler: http.HandlerFunc(this.serverHttpHandler), MaxHeaderBytes: conf.MaxHeaderBytes, TLSConfig: conf.TLSConfig}
+	if conf.ReadTimeout > 0 {
+		server.ReadTimeout = conf.ReadTimeout
 	}
-	go server.Serve(this.listener)
+	if conf.WriteTimeout > 0 {
+		server.WriteTimeout = conf.WriteTimeout
+	}
+	http2.ConfigureServer(server, &http2.Server{})
+	conf.TLSConfig.NextProtos = append(conf.TLSConfig.NextProtos, "http/1.1")
+	var err error
+	this.listener, err = net.Listen("tcp", conf.serverAddr)
+	if err != nil {
+		return errors.New(logger.Error("listen [%s] fail:%s", conf.serverAddr, err))
+	}
+	logger.Info("start HttpServer :%s", conf.serverAddr)
+	keepAliveListrener := tcpKeepAliveListener{this.listener.(*net.TCPListener)}
+	if conf.TLSConfig != nil {
+		go server.Serve(tls.NewListener(keepAliveListrener, conf.TLSConfig))
+	} else {
+		go server.Serve(keepAliveListrener)
+	}
 	return nil
 }
 
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(time.Minute)
+	return tc, nil
+}
+
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
-	reply := newReply()
+	reply := newReply(responseWriter)
+	logger.Debug("this.router.filters is %#v\n", this.router.filters)
 	this.router.filters[0].filter(request, reply)
 	//TODO 处理异常的StatusCode
-	reply.write(responseWriter)
+	if !reply.openStream {
+		responseWriter.Header().Set("Connection", "close")
+		reply.write()
+	}
+	request.Body.Close()
+	logger.Debug("end Requesr Process")
 }
 
 func (this *Server) Stop() {

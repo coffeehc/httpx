@@ -1,9 +1,9 @@
-WEB
+a lightweight web framework
 ==
 
-把自己的java写的web框架改了撑了golong的,比较轻量级
+**support http2 protocol**
 
-## Web配置
+## Web Configuable
 
 ```go
 type ServerConfig struct {
@@ -16,7 +16,27 @@ type ServerConfig struct {
 }
 ```
 
-## 例子
+##  support Method
+
+```go
+	const (
+	GET     = "GET"
+	POST    = "POST"
+	PUT     = "PUT"
+	DELETE  = "DELETE"
+	HEAD    = "HEAD"
+	TRACE   = "TRACE"
+	CONNECT = "CONNECT"
+	)
+```
+
+### Handler interface definition
+
+```go
+	func(request *http.Request, pathFragments map[string]string, reply *Reply)
+```
+
+## Example
 
 ```go
 package web
