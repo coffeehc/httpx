@@ -2,9 +2,12 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
+	"time"
+
+	"github.com/ugorji/go/codec"
 )
 
 type Transport interface {
@@ -30,17 +33,25 @@ func (this StringTransport) ContentType() string {
 }
 
 type JsonTransport struct {
+	jsonHandler *codec.JsonHandle
+	TimeFormat  codec.Ext
 }
 
-func (this JsonTransport) Out(wirter io.Writer, data interface{}) error {
-	bytes, err := json.Marshal(data)
+func (this *JsonTransport) Out(wirter io.Writer, data interface{}) error {
+	if this.jsonHandler == nil {
+		this.jsonHandler = new(codec.JsonHandle)
+		if this.TimeFormat != nil {
+			this.jsonHandler.SetExt(reflect.TypeOf(time.Time{}), 1, this.TimeFormat)
+		}
+	}
+	encode := codec.NewEncoder(wirter, this.jsonHandler)
+	err := encode.Encode(data)
 	if err != nil {
 		return err
 	}
-	_, err = wirter.Write(bytes)
 	return err
 }
 
-func (this JsonTransport) ContentType() string {
+func (this *JsonTransport) ContentType() string {
 	return "json/application;charset=UTF-8"
 }

@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bradfitz/http2"
@@ -89,7 +90,6 @@ func (this *Server) Start() error {
 		server.WriteTimeout = conf.WriteTimeout
 	}
 	http2.ConfigureServer(server, &http2.Server{})
-	conf.TLSConfig.NextProtos = append(conf.TLSConfig.NextProtos, "http/1.1")
 	var err error
 	this.listener, err = net.Listen("tcp", conf.serverAddr)
 	if err != nil {
@@ -98,6 +98,7 @@ func (this *Server) Start() error {
 	logger.Info("start HttpServer :%s", conf.serverAddr)
 	keepAliveListrener := tcpKeepAliveListener{this.listener.(*net.TCPListener)}
 	if conf.TLSConfig != nil {
+		conf.TLSConfig.NextProtos = append(conf.TLSConfig.NextProtos, "http/1.1")
 		go server.Serve(tls.NewListener(keepAliveListrener, conf.TLSConfig))
 	} else {
 		go server.Serve(keepAliveListrener)
@@ -120,8 +121,9 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 }
 
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
+	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
+	logger.Debug("request is %s", request.URL.Path)
 	reply := newReply(responseWriter)
-	logger.Debug("this.router.filters is %#v\n", this.router.filters)
 	this.router.filters[0].filter(request, reply)
 	//TODO 处理异常的StatusCode
 	if !reply.openStream {
@@ -129,7 +131,6 @@ func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, reques
 		reply.write()
 	}
 	request.Body.Close()
-	logger.Debug("end Requesr Process")
 }
 
 func (this *Server) Stop() {

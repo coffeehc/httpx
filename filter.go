@@ -22,6 +22,7 @@ type filterWarp struct {
 func (this *filterWarp) filter(request *http.Request, reply *Reply) {
 	this.actionFilter(request, reply, this.filterChain)
 }
+
 func (this *filterWarp) filterChain(request *http.Request, reply *Reply) {
 	chain := this.dispatcher.nextFilter(request, this.index)
 	if chain == nil {
@@ -30,6 +31,7 @@ func (this *filterWarp) filterChain(request *http.Request, reply *Reply) {
 	}
 	chain.filter(request, reply)
 }
+
 func newFilterWarp(matcher uriPatternMatcher, index int, actionFilter ActionFilter, dispatcher *routingDispatcher) *filterWarp {
 	return &filterWarp{matcher: matcher, index: index, actionFilter: actionFilter, dispatcher: dispatcher}
 }

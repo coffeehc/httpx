@@ -2,7 +2,6 @@
 package web
 
 import (
-	"bufio"
 	"io"
 	"net/http"
 
@@ -36,6 +35,10 @@ func (this *Reply) GetStatusCode() int {
 	return this.statusCode
 }
 
+func (this *Reply) GetContentType() string {
+	return this.contentType
+}
+
 func (this *Reply) SetContentType(contentType string) *Reply {
 	this.contentType = contentType
 	return this
@@ -53,6 +56,14 @@ func (this *Reply) SetCookie(cookie http.Cookie) *Reply {
 func (this *Reply) SetHeader(key, value string) *Reply {
 	this.headers[key] = value
 	return this
+}
+
+func (this *Reply) GetHeader(key string) string {
+	return this.headers[key]
+}
+
+func (this *Reply) DelHeader(key string) {
+	delete(this.headers, key)
 }
 
 func (this *Reply) Redirect(code int, url string) *Reply {
@@ -81,15 +92,25 @@ func (this *Reply) write() {
 	}
 	if this.data != nil {
 		if reader, ok := this.data.(io.Reader); ok {
-			_, err := bufio.NewReader(reader).WriteTo(this.w)
+			_, err := io.Copy(this.w, reader)
 			if err != nil {
 				logger.Error("数据输出出现错误:%s", err)
+				return
+			}
+			if limitReader, ok := this.data.(*io.LimitedReader); ok {
+				reader = limitReader.R
+				if closer, ok := reader.(io.Closer); ok {
+					closer.Close()
+				}
 			}
 			if closer, ok := this.data.(io.Closer); ok {
 				closer.Close()
 			}
 		} else {
-			this.transport.Out(this.w, this.data)
+			err := this.transport.Out(this.w, this.data)
+			if err != nil {
+				logger.Error("数据序列化失败:%s", err)
+			}
 		}
 	}
 }
