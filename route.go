@@ -100,6 +100,10 @@ func buildActionHandler(action *defauleAction) (*actionHandler, error) {
 	if !strings.HasPrefix(path, PATH_SEPARATOR) {
 		return nil, errors.New(logger.Error("定义的Uri必须是%s前缀", PATH_SEPARATOR))
 	}
+	if strings.HasSuffix(path, PATH_SEPARATOR) {
+		pathData := []byte(path)
+		path = string(pathData[0 : len(pathData)-1])
+	}
 	paths := strings.Split(path, PATH_SEPARATOR)
 	uriConversions := make(map[string]int, 0)
 	conversionUri := ""
@@ -123,6 +127,8 @@ func buildActionHandler(action *defauleAction) (*actionHandler, error) {
 	if err != nil {
 		return nil, err
 	}
+	//	handler := &actionHandler{exp: exp, method: action.GetMethod(), defineUri: action.GetPath(), hasPathFragments: len(uriConversions) > 0, uriConversions: uriConversions, pathSize: pathSize, service: action.Service}
+	//	logger.Debug("handler is %#v", handler)
 	return &actionHandler{exp: exp, method: action.GetMethod(), defineUri: action.GetPath(), hasPathFragments: len(uriConversions) > 0, uriConversions: uriConversions, pathSize: pathSize, service: action.Service}, nil
 }
 

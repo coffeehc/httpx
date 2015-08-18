@@ -24,10 +24,12 @@ const (
 	CONNECT = "CONNECT"
 )
 
+type RequestHandler func(request *http.Request, pathFragments map[string]string, reply *Reply)
+
 type defauleAction struct {
 	path    string
 	method  string
-	service func(request *http.Request, pathFragments map[string]string, reply *Reply)
+	service RequestHandler
 }
 
 func (this *defauleAction) GetPath() string {
@@ -122,7 +124,10 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
-	logger.Debug("request is %s", request.URL.Path)
+	if strings.HasSuffix(request.URL.Path, PATH_SEPARATOR) {
+		pathData := []byte(request.URL.Path)
+		request.URL.Path = string(pathData[0 : len(pathData)-1])
+	}
 	reply := newReply(responseWriter)
 	this.router.filters[0].filter(request, reply)
 	//TODO 处理异常的StatusCode
@@ -140,7 +145,7 @@ func (this *Server) Stop() {
 	}
 }
 
-func (server *Server) Regedit(path string, method string, service func(request *http.Request, pathFragments map[string]string, reply *Reply)) error {
+func (server *Server) Regedit(path string, method string, service RequestHandler) error {
 	return server.router.matcher.regeditAction(&defauleAction{path, method, service})
 }
 
