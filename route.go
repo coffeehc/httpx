@@ -60,7 +60,7 @@ func (route *routingDispatcher) handle(request *http.Request, reply *Reply) {
 	handler := route.matcher.getActionHandler(request.URL.Path, strings.ToUpper(request.Method))
 	if handler == nil {
 		reply.SetCode(404).With("404:you are lost")
-		logger.Error("Not found Handler for [%s]", request.URL.Path)
+		logger.Error("Not found Handler for[%s] [%s]", strings.ToUpper(request.Method), request.URL.Path)
 		return
 	}
 	handler.doAction(request, reply)
@@ -100,10 +100,6 @@ func buildActionHandler(action *defauleAction) (*actionHandler, error) {
 	if !strings.HasPrefix(path, PATH_SEPARATOR) {
 		return nil, errors.New(logger.Error("定义的Uri必须是%s前缀", PATH_SEPARATOR))
 	}
-	if strings.HasSuffix(path, PATH_SEPARATOR) {
-		pathData := []byte(path)
-		path = string(pathData[0 : len(pathData)-1])
-	}
 	paths := strings.Split(path, PATH_SEPARATOR)
 	uriConversions := make(map[string]int, 0)
 	conversionUri := ""
@@ -127,8 +123,6 @@ func buildActionHandler(action *defauleAction) (*actionHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-	//	handler := &actionHandler{exp: exp, method: action.GetMethod(), defineUri: action.GetPath(), hasPathFragments: len(uriConversions) > 0, uriConversions: uriConversions, pathSize: pathSize, service: action.Service}
-	//	logger.Debug("handler is %#v", handler)
 	return &actionHandler{exp: exp, method: action.GetMethod(), defineUri: action.GetPath(), hasPathFragments: len(uriConversions) > 0, uriConversions: uriConversions, pathSize: pathSize, service: action.Service}, nil
 }
 
@@ -149,7 +143,7 @@ func (this _actionHandler) Less(i, j int) bool {
 			if path2 == _conversion {
 				return false
 			}
-			return true
+			return len(path1) < len(path2)
 		}
 	}
 	return true

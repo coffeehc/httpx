@@ -20,11 +20,13 @@ import (
 )
 
 func RegeditPprof(server *web.Server) {
-	server.Regedit("/debug/pprof", web.GET, Index)
+	server.Regedit("/debug/pprof/", web.GET, Index)
 	server.Regedit("/debug/pprof/cmdline", web.GET, Cmdline)
+	server.Regedit("/debug/pprof/cmdline", web.POST, Cmdline)
 	server.Regedit("/debug/pprof/profile", web.GET, Profile)
 	server.Regedit("/debug/pprof/profile", web.POST, Profile)
 	server.Regedit("/debug/pprof/symbol", web.GET, Symbol)
+	server.Regedit("/debug/pprof/symbol", web.POST, Symbol)
 }
 
 func Cmdline(request *http.Request, pathFragments map[string]string, reply *web.Reply) {

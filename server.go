@@ -83,6 +83,7 @@ func NewServer(serverConfig *ServerConfig) *Server {
 
 func (this *Server) Start() error {
 	logger.Debug("serverConfig is %#v", this.config)
+	this.router.matcher.sort()
 	conf := this.config
 	server := &http.Server{Handler: http.HandlerFunc(this.serverHttpHandler), MaxHeaderBytes: conf.MaxHeaderBytes, TLSConfig: conf.TLSConfig}
 	if conf.ReadTimeout > 0 {
@@ -124,10 +125,6 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
-	if strings.HasSuffix(request.URL.Path, PATH_SEPARATOR) {
-		pathData := []byte(request.URL.Path)
-		request.URL.Path = string(pathData[0 : len(pathData)-1])
-	}
 	reply := newReply(responseWriter)
 	this.router.filters[0].filter(request, reply)
 	//TODO 处理异常的StatusCode
