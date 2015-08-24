@@ -18,10 +18,15 @@ type Reply struct {
 	contentType string
 	openStream  bool
 	w           http.ResponseWriter
+	isWebSocket bool
 }
 
 func newReply(w http.ResponseWriter) *Reply {
-	return &Reply{statusCode: 200, transport: StringTransport{}, headers: make(map[string]string, 0), cookies: make([]http.Cookie, 0), w: w}
+	return &Reply{statusCode: 200, transport: StringTransport{}, headers: make(map[string]string, 0), cookies: make([]http.Cookie, 0), w: w, isWebSocket: false}
+}
+
+func (this *Reply) startWebSocket() {
+	this.isWebSocket = true
 }
 
 func (this *Reply) OpenStream() *Stream {
@@ -86,6 +91,9 @@ func (this *Reply) As(transport Transport) *Reply {
 }
 
 func (this *Reply) write() {
+	if this.isWebSocket {
+		return
+	}
 	this.writeHeader()
 	if this.redirect {
 		return

@@ -146,6 +146,11 @@ func (server *Server) Regedit(path string, method string, service RequestHandler
 	return server.router.matcher.regeditAction(&defauleAction{path, method, service})
 }
 
+func (server *Server) RegeditWebSocket(path string, service WebScoketHandler) error {
+	adapter := &webScoketAdapter{service}
+	return server.router.matcher.regeditAction(&defauleAction{path, GET, adapter.webScoketHandlerAdapter})
+}
+
 func (server *Server) AddFilter(uriPattern string, actionFilter ActionFilter) {
 	server.router.addFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
 }
