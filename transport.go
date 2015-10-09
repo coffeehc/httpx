@@ -10,6 +10,11 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
+var (
+	Default_JsonTransport   = &JsonTransport{}
+	Default_StringTransport = StringTransport{}
+)
+
 type Transport interface {
 	Out(wirter io.Writer, data interface{}) error
 
@@ -38,6 +43,10 @@ type JsonTransport struct {
 }
 
 func (this *JsonTransport) Out(wirter io.Writer, data interface{}) error {
+	if str, ok := data.(string); ok {
+		wirter.Write([]byte(str))
+		return nil
+	}
 	if this.jsonHandler == nil {
 		this.jsonHandler = new(codec.JsonHandle)
 		if this.TimeFormat != nil {
