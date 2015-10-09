@@ -43,15 +43,12 @@ type JsonTransport struct {
 }
 
 func (this *JsonTransport) Out(wirter io.Writer, data interface{}) error {
-	if str, ok := data.(string); ok {
-		wirter.Write([]byte(str))
-		return nil
-	}
 	if this.jsonHandler == nil {
 		this.jsonHandler = new(codec.JsonHandle)
-		if this.TimeFormat != nil {
-			this.jsonHandler.SetExt(reflect.TypeOf(time.Time{}), 1, this.TimeFormat)
+		if this.TimeFormat == nil {
+			this.TimeFormat = TimeToStringFormat{"2006-01-02T15:04:05.999Z07:00"}
 		}
+		this.jsonHandler.SetExt(reflect.TypeOf(time.Time{}), 1, this.TimeFormat)
 	}
 	encode := codec.NewEncoder(wirter, this.jsonHandler)
 	err := encode.Encode(data)

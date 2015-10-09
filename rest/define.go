@@ -2,9 +2,9 @@
 package rest
 
 type RestResponse struct {
-	Id   int64       `json:"id"`
-	Code int         `json:"code"`
-	Msg  interface{} `json:"msg"`
+	Request_id int64       `json:"request_id"`
+	Code       int         `json:"code"`
+	Msg        interface{} `json:"msg"`
 }
 
 type Error struct {
