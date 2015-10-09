@@ -22,7 +22,7 @@ type Reply struct {
 }
 
 func newReply(w http.ResponseWriter) *Reply {
-	return &Reply{statusCode: 200, transport: StringTransport{}, headers: make(map[string]string, 0), cookies: make([]http.Cookie, 0), w: w, isWebSocket: false}
+	return &Reply{statusCode: 200, transport: Default_StringTransport, headers: make(map[string]string, 0), cookies: make([]http.Cookie, 0), w: w, isWebSocket: false}
 }
 
 func (this *Reply) startWebSocket() {
