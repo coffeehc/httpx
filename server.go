@@ -22,6 +22,7 @@ const (
 	HEAD    = "HEAD"
 	TRACE   = "TRACE"
 	CONNECT = "CONNECT"
+	PATCH   = "PATCH"
 )
 
 type RequestHandler func(request *http.Request, pathFragments map[string]string, reply *Reply)
