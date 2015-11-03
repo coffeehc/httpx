@@ -178,6 +178,7 @@ func (this *pathMatcher) regeditAction(action *defauleAction) error {
 func (this *pathMatcher) getActionHandler(uri, method string) *actionHandler {
 	actionHandlers, ok := this.actionHandlerMap[method]
 	if !ok {
+		logger.Error("没有注册对应的Handler")
 		return nil
 	}
 	paths := strings.Split(uri, PATH_SEPARATOR)
