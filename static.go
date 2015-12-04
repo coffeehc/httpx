@@ -39,7 +39,7 @@ func (this *StaticService) StaticFilter(request *http.Request, reply *Reply, cha
 			upath = "/" + upath
 			request.URL.Path = upath
 		}
-		serveFile(reply, request, this.root, path.Clean(upath), true)
+		ServeFile(reply, request, this.root, path.Clean(upath), true)
 	} else {
 		chain(request, reply)
 	}
@@ -53,7 +53,7 @@ func localRedirect(reply *Reply, r *http.Request, newPath string) {
 	reply.SetCode(http.StatusMovedPermanently)
 }
 
-func serveFile(reply *Reply, r *http.Request, fs http.FileSystem, name string, redirect bool) {
+func ServeFile(reply *Reply, r *http.Request, fs http.FileSystem, name string, redirect bool) {
 	const indexPage = "/index.html"
 	if strings.HasSuffix(r.URL.Path, indexPage) {
 		localRedirect(reply, r, "./")

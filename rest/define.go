@@ -8,6 +8,10 @@ type Error struct {
 	Information_link string `json:"information_link"`
 }
 
+func NewSimpleError(code int32,message string) Error{
+	return Error{Code:code,Message:message}
+}
+
 type ErrorResponse struct {
 	Errors []Error `json:"errors"`
 }
