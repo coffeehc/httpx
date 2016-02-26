@@ -46,7 +46,7 @@ func (this *JsonTransport) Out(wirter io.Writer, data interface{}) error {
 	if this.jsonHandler == nil {
 		this.jsonHandler = new(codec.JsonHandle)
 		if this.TimeFormat == nil {
-			this.TimeFormat = TimeToStringFormat{"2006-01-02T15:04:05.999Z07:00"}
+			this.TimeFormat = TimeToStringConvert{"2006-01-02T15:04:05.999Z07:00"}
 		}
 		this.jsonHandler.SetExt(reflect.TypeOf(time.Time{}), 1, this.TimeFormat)
 	}

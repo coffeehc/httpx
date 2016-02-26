@@ -10,38 +10,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bradfitz/http2"
 	"github.com/coffeehc/logger"
+	"github.com/golang/net/http2"
 )
+
+type HttpMethod string
 
 const (
-	GET     = "GET"
-	POST    = "POST"
-	PUT     = "PUT"
-	DELETE  = "DELETE"
-	HEAD    = "HEAD"
-	TRACE   = "TRACE"
-	CONNECT = "CONNECT"
-	PATCH   = "PATCH"
+	GET     = HttpMethod("GET")
+	POST    = HttpMethod("POST")
+	PUT     = HttpMethod("PUT")
+	DELETE  = HttpMethod("DELETE")
+	HEAD    = HttpMethod("HEAD")
+	TRACE   = HttpMethod("TRACE")
+	CONNECT = HttpMethod("CONNECT")
+	PATCH   = HttpMethod("PATCH")
 )
-
-type RequestHandler func(request *http.Request, pathFragments map[string]string, reply *Reply)
-
-type defauleAction struct {
-	path    string
-	method  string
-	service RequestHandler
-}
-
-func (this *defauleAction) GetPath() string {
-	return this.path
-}
-func (this *defauleAction) GetMethod() string {
-	return this.method
-}
-func (this *defauleAction) Service(request *http.Request, pathFragments map[string]string, reply *Reply) {
-	this.service(request, pathFragments, reply)
-}
 
 type ServerConfig struct {
 	Addr           string
@@ -127,7 +111,7 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
 	reply := newReply(responseWriter)
-	this.router.filters[0].filter(request, reply)
+	this.router.filter.doFilter(request, reply)
 	//TODO 处理异常的StatusCode
 	if !reply.openStream {
 		responseWriter.Header().Set("Connection", "close")
@@ -143,13 +127,21 @@ func (this *Server) Stop() {
 	}
 }
 
-func (server *Server) Regedit(path string, method string, service RequestHandler) error {
-	return server.router.matcher.regeditAction(&defauleAction{path, method, service})
+func (server *Server) Regedit(path string, method HttpMethod, requestHandler RequestHandler) error {
+	err := server.router.matcher.regeditAction(path, method, requestHandler)
+	if err != nil {
+		logger.Error("注册 Handler 失败:%s", err)
+	}
+	return err
 }
 
 func (server *Server) RegeditWebSocket(path string, service WebScoketHandler) error {
 	adapter := &webScoketAdapter{service}
-	return server.router.matcher.regeditAction(&defauleAction{path, GET, adapter.webScoketHandlerAdapter})
+	err := server.router.matcher.regeditAction(path, GET, adapter.webScoketHandlerAdapter)
+	if err != nil {
+		logger.Error("注册 Handler 失败:%s", err)
+	}
+	return err
 }
 
 func (server *Server) AddFilter(uriPattern string, actionFilter ActionFilter) {

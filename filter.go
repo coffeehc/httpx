@@ -13,27 +13,40 @@ type ActionFilter func(request *http.Request, reply *Reply, chain FilterChain)
 type FilterChain func(request *http.Request, reply *Reply)
 
 type filterWarp struct {
-	matcher      uriPatternMatcher
-	index        int
-	actionFilter ActionFilter
-	dispatcher   *routingDispatcher
+	matcher       uriPatternMatcher
+	actionFilter  ActionFilter
+	nextFilter    *filterWarp
+	requestHandle FilterChain
 }
 
-func (this *filterWarp) filter(request *http.Request, reply *Reply) {
-	this.actionFilter(request, reply, this.filterChain)
+func newFilterWarp(matcher uriPatternMatcher, actionFilter ActionFilter) *filterWarp {
+	return &filterWarp{matcher: matcher, actionFilter: actionFilter}
+}
+
+func (this *filterWarp) addNextFilter(filter *filterWarp) {
+	if this.nextFilter == nil {
+		filter.requestHandle = this.requestHandle
+		this.nextFilter = filter
+		this.requestHandle = nil
+		return
+	}
+	this.nextFilter.addNextFilter(filter)
+}
+
+func (this *filterWarp) doFilter(request *http.Request, reply *Reply) {
+	if this.matcher.match(request.URL.Path) {
+		this.actionFilter(request, reply, this.filterChain)
+		return
+	}
+	this.filterChain(request, reply)
 }
 
 func (this *filterWarp) filterChain(request *http.Request, reply *Reply) {
-	chain := this.dispatcher.nextFilter(request, this.index)
-	if chain == nil {
-		this.dispatcher.handle(request, reply)
+	if this.nextFilter == nil {
+		this.requestHandle(request, reply)
 		return
 	}
-	chain.filter(request, reply)
-}
-
-func newFilterWarp(matcher uriPatternMatcher, index int, actionFilter ActionFilter, dispatcher *routingDispatcher) *filterWarp {
-	return &filterWarp{matcher: matcher, index: index, actionFilter: actionFilter, dispatcher: dispatcher}
+	this.nextFilter.doFilter(request, reply)
 }
 
 func AccessLogFilter(request *http.Request, reply *Reply, chain FilterChain) {

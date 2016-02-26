@@ -6,11 +6,15 @@ import (
 	"time"
 )
 
-type TimeToNanoFormat struct{}
+type TimeToNanoConvert struct{}
 
-func (x TimeToNanoFormat) WriteExt(interface{}) []byte { panic("unsupported") }
-func (x TimeToNanoFormat) ReadExt(interface{}, []byte) { panic("unsupported") }
-func (x TimeToNanoFormat) ConvertExt(v interface{}) interface{} {
+func (x TimeToNanoConvert) WriteExt(interface{}) []byte {
+	panic("unsupported")
+}
+func (x TimeToNanoConvert) ReadExt(interface{}, []byte) {
+	panic("unsupported")
+}
+func (x TimeToNanoConvert) ConvertExt(v interface{}) interface{} {
 	switch v2 := v.(type) {
 	case time.Time:
 		return v2.UnixNano()
@@ -20,7 +24,7 @@ func (x TimeToNanoFormat) ConvertExt(v interface{}) interface{} {
 		panic(fmt.Sprintf("unsupported format for time conversion: expecting time.Time; got %T", v))
 	}
 }
-func (x TimeToNanoFormat) UpdateExt(dest interface{}, v interface{}) {
+func (x TimeToNanoConvert) UpdateExt(dest interface{}, v interface{}) {
 	tt := dest.(*time.Time)
 	switch v2 := v.(type) {
 	case int64:
@@ -32,13 +36,17 @@ func (x TimeToNanoFormat) UpdateExt(dest interface{}, v interface{}) {
 	}
 }
 
-type TimeToStringFormat struct {
+type TimeToStringConvert struct {
 	Layout string
 }
 
-func (x TimeToStringFormat) WriteExt(interface{}) []byte { panic("unsupported") }
-func (x TimeToStringFormat) ReadExt(interface{}, []byte) { panic("unsupported") }
-func (x TimeToStringFormat) ConvertExt(v interface{}) interface{} {
+func (x TimeToStringConvert) WriteExt(interface{}) []byte {
+	panic("unsupported")
+}
+func (x TimeToStringConvert) ReadExt(interface{}, []byte) {
+	panic("unsupported")
+}
+func (x TimeToStringConvert) ConvertExt(v interface{}) interface{} {
 	switch v2 := v.(type) {
 	case time.Time:
 		return v2.Format(x.Layout)
@@ -48,7 +56,7 @@ func (x TimeToStringFormat) ConvertExt(v interface{}) interface{} {
 		panic(fmt.Sprintf("unsupported format for time conversion: expecting time.Time; got %T", v))
 	}
 }
-func (x TimeToStringFormat) UpdateExt(dest interface{}, v interface{}) {
+func (x TimeToStringConvert) UpdateExt(dest interface{}, v interface{}) {
 	tt := dest.(*time.Time)
 	var err error
 	switch v2 := v.(type) {
