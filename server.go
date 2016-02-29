@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/coffeehc/logger"
+	"github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 type Server struct {
@@ -54,8 +55,16 @@ func (this *Server) Start() error {
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
 	httpReply := newHttpReply(responseWriter)
+	defer httpReply.finishReply()
 	this.router.filter.doFilter(request, httpReply)
-	httpReply.finishReply()
+
+}
+
+//适配 Http原生的 Handler 接口
+func (server *Server) RegeditHttpHandler(path string, method HttpMethod, handler http.Handler) error {
+	return server.Regedit(path, method, func(request *http.Request, pathFragments map[string]string, reply Reply) {
+		handler(reply.GetResponseWriter(), request)
+	})
 }
 
 func (server *Server) Regedit(path string, method HttpMethod, requestHandler RequestHandler) error {
@@ -72,4 +81,12 @@ func (server *Server) AddFilter(uriPattern string, actionFilter Filter) {
 
 func (server *Server) AddFilterWithRegex(uriPattern string, actionFilter Filter) {
 	server.router.addFilter(newRegexUriPatternMatcher(uriPattern), actionFilter)
+}
+
+func (server *Server) AddReqeuseErrorHandler(code int, handler RequestErrorHandler) error {
+	if _, ok := server.router.errorHandlers[code]; ok {
+		return errors.New(logger.Error("已经注册了[%d]异常响应码的处理方法,注册失败"))
+	}
+	server.router.errorHandlers[code] = handler
+	return nil
 }

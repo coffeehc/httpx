@@ -17,25 +17,38 @@ const (
 )
 
 type router struct {
-	matcher handlerMatcher
-	filter  *filterWarp
+	matcher       handlerMatcher
+	filter        *filterWarp
+	errorHandlers ErrorHandlers
 }
 
 func newRouter() *router {
-	route := &router{matcher: handlerMatcher{requestHandlerMap: make(map[HttpMethod]requestHandlerList)}}
-	route.filter = &filterWarp{
+	_router := &router{matcher: handlerMatcher{requestHandlerMap: make(map[HttpMethod]requestHandlerList)}}
+	_router.errorHandlers = ErrorHandlers(make(map[int]RequestErrorHandler, 0))
+	_router.filter = &filterWarp{
 		matcher: newServletStyleUriPatternMatcher("/*"),
 		requestFilter: func(request *http.Request, reply Reply, chain FilterChain) {
 			defer func() {
-				if ok := recover(); ok != nil {
-					reply.SetStatusCode(500).With(fmt.Sprintf("500:%#s", ok))
+				if err := recover(); err != nil {
+					var httpErr *HttpError
+					var ok bool
+					if httpErr, ok = err.(*HttpError); !ok {
+						httpErr = HTTPERR_500(fmt.Sprintf("%#s", err))
+					}
+					if handler, ok := _router.errorHandlers[httpErr.Code]; ok {
+						reply.GetResponseWriter().WriteHeader(httpErr.Code)
+						handler(request, httpErr, reply)
+						return
+					}
+					reply.SetStatusCode(httpErr.Code)
+					reply.With(httpErr.Message)
 				}
 			}()
 			chain(request, reply)
 		},
-		filterChainFunc: route.handle,
+		filterChainFunc: _router.handle,
 	}
-	return route
+	return _router
 }
 
 func (route *router) addFilter(matcher UriPatternMatcher, actionFilter Filter) {
