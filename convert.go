@@ -6,36 +6,6 @@ import (
 	"time"
 )
 
-type TimeToNanoConvert struct{}
-
-func (x TimeToNanoConvert) WriteExt(interface{}) []byte {
-	panic("unsupported")
-}
-func (x TimeToNanoConvert) ReadExt(interface{}, []byte) {
-	panic("unsupported")
-}
-func (x TimeToNanoConvert) ConvertExt(v interface{}) interface{} {
-	switch v2 := v.(type) {
-	case time.Time:
-		return v2.UnixNano()
-	case *time.Time:
-		return v2.UnixNano()
-	default:
-		panic(fmt.Sprintf("unsupported format for time conversion: expecting time.Time; got %T", v))
-	}
-}
-func (x TimeToNanoConvert) UpdateExt(dest interface{}, v interface{}) {
-	tt := dest.(*time.Time)
-	switch v2 := v.(type) {
-	case int64:
-		*tt = time.Unix(0, v2)
-	case uint64:
-		*tt = time.Unix(0, int64(v2))
-	default:
-		panic(fmt.Sprintf("unsupported format for time conversion: expecting int64/uint64; got %T", v))
-	}
-}
-
 type TimeToStringConvert struct {
 	Layout string
 }

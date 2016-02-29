@@ -2,20 +2,8 @@
 package web
 
 import (
-	"crypto/tls"
 	"net/http"
 )
-
-func NewTLSConfig(certFile, keyFile string) (*tls.Config, error) {
-	config := &tls.Config{}
-	var err error
-	config.Certificates = make([]tls.Certificate, 1)
-	config.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, err
-	}
-	return config, nil
-}
 
 type Stream struct {
 	w http.ResponseWriter

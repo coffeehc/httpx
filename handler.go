@@ -8,21 +8,21 @@ import (
 	"strings"
 )
 
-type RequestHandler func(request *http.Request, pathFragments map[string]string, reply *Reply)
+type RequestHandler func(request *http.Request, pathFragments map[string]string, reply Reply)
 
-type actionHandler struct {
-	method           HttpMethod
-	defineUri        string
-	hasPathFragments bool
-	uriConversions   map[string]int
-	pathSize         int
-	requestHandle    func(request *http.Request, PathFragments map[string]string, reply *Reply)
-	exp              *regexp.Regexp
-	//用于排序后提高 action 命中率
+type requestHandler struct {
+	method            HttpMethod
+	defineUri         string
+	hasPathFragments  bool
+	uriConversions    map[string]int
+	pathSize          int
+	requestHandleFunc func(request *http.Request, PathFragments map[string]string, reply Reply)
+	exp               *regexp.Regexp
+	//用于排序后提高 request 命中率
 	//accessCount int64
 }
 
-func (this *actionHandler) doAction(request *http.Request, reply *Reply) {
+func (this *requestHandler) doAction(request *http.Request, reply Reply) {
 	requestUri := request.URL.Path
 	param := make(map[string]string, 0)
 	if this.hasPathFragments {
@@ -34,15 +34,15 @@ func (this *actionHandler) doAction(request *http.Request, reply *Reply) {
 			param[name] = paths[index]
 		}
 	}
-	this.requestHandle(request, param, reply)
+	this.requestHandleFunc(request, param, reply)
 }
 
 //用于匹配是否
-func (this *actionHandler) match(uri string) bool {
+func (this *requestHandler) match(uri string) bool {
 	return this.exp.MatchString(uri)
 }
 
-func buildActionHandler(path string, method HttpMethod, requestHandler RequestHandler) (*actionHandler, error) {
+func buildRequestHandler(path string, method HttpMethod, requestHandlerFunc RequestHandler) (*requestHandler, error) {
 	if !strings.HasPrefix(path, PATH_SEPARATOR) {
 		return nil, errors.New(logger.Error("定义的Uri必须是%s前缀", PATH_SEPARATOR))
 	}
@@ -69,23 +69,23 @@ func buildActionHandler(path string, method HttpMethod, requestHandler RequestHa
 	if err != nil {
 		return nil, err
 	}
-	return &actionHandler{
-		exp:              exp,
-		method:           method,
-		defineUri:        path,
-		hasPathFragments: len(uriConversions) > 0,
-		uriConversions:   uriConversions,
-		pathSize:         pathSize,
-		requestHandle:    requestHandler,
+	return &requestHandler{
+		exp:               exp,
+		method:            method,
+		defineUri:         path,
+		hasPathFragments:  len(uriConversions) > 0,
+		uriConversions:    uriConversions,
+		pathSize:          pathSize,
+		requestHandleFunc: requestHandlerFunc,
 	}, nil
 }
 
-type actionHandlerList []*actionHandler
+type requestHandlerList []*requestHandler
 
-func (this actionHandlerList) Len() int {
+func (this requestHandlerList) Len() int {
 	return len(this)
 }
-func (this actionHandlerList) Less(i, j int) bool {
+func (this requestHandlerList) Less(i, j int) bool {
 	uri1s := strings.Split(this[i].exp.String(), PATH_SEPARATOR)
 	uri2s := strings.Split(this[j].exp.String(), PATH_SEPARATOR)
 	if len(uri1s) != len(uri2s) {
@@ -102,6 +102,6 @@ func (this actionHandlerList) Less(i, j int) bool {
 	}
 	return true
 }
-func (this actionHandlerList) Swap(i, j int) {
+func (this requestHandlerList) Swap(i, j int) {
 	this[i], this[j] = this[j], this[i]
 }

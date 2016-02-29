@@ -1,5 +1,5 @@
 // static
-package web
+package static
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ func NewStaticFilter(root http.FileSystem, urlPrefix string) ActionFilter {
 	return service.StaticFilter
 }
 
-func (this *StaticService) StaticFilter(request *http.Request, reply *Reply, chain FilterChain) {
+func (this *StaticService) StaticFilter(request *http.Request, reply Reply, chain FilterChain) {
 	upath := strings.TrimPrefix(request.URL.Path, this.urlPrefix)
 	if len(upath) < len(request.URL.Path) {
 		request.URL.Path = upath
@@ -45,15 +45,15 @@ func (this *StaticService) StaticFilter(request *http.Request, reply *Reply, cha
 	}
 }
 
-func localRedirect(reply *Reply, r *http.Request, newPath string) {
+func localRedirect(reply Reply, r *http.Request, newPath string) {
 	if q := r.URL.RawQuery; q != "" {
 		newPath += "?" + q
 	}
 	reply.SetHeader("Location", newPath)
-	reply.SetCode(http.StatusMovedPermanently)
+	reply.SetStatusCode(http.StatusMovedPermanently)
 }
 
-func ServeFile(reply *Reply, r *http.Request, fs http.FileSystem, name string, redirect bool) {
+func ServeFile(reply Reply, r *http.Request, fs http.FileSystem, name string, redirect bool) {
 	const indexPage = "/index.html"
 	if strings.HasSuffix(r.URL.Path, indexPage) {
 		localRedirect(reply, r, "./")
@@ -61,12 +61,12 @@ func ServeFile(reply *Reply, r *http.Request, fs http.FileSystem, name string, r
 	}
 	f, err := fs.Open(name)
 	if err != nil {
-		reply.SetCode(http.StatusNotFound)
+		reply.SetStatusCode(http.StatusNotFound)
 		return
 	}
 	d, err1 := f.Stat()
 	if err1 != nil {
-		reply.SetCode(http.StatusNotFound)
+		reply.SetStatusCode(http.StatusNotFound)
 		return
 	}
 	if redirect {
@@ -109,7 +109,7 @@ func ServeFile(reply *Reply, r *http.Request, fs http.FileSystem, name string, r
 	serveContent(reply, r, d.Name(), d.ModTime(), sizeFunc, f)
 }
 
-func serveContent(reply *Reply, r *http.Request, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker) {
+func serveContent(reply Reply, r *http.Request, name string, modtime time.Time, sizeFunc func() (int64, error), content io.ReadSeeker) {
 	if checkLastModified(reply, r, modtime) {
 		return
 	}
@@ -126,7 +126,7 @@ func serveContent(reply *Reply, r *http.Request, name string, modtime time.Time,
 		ctype = http.DetectContentType(buf[:n])
 		_, err := content.Seek(0, os.SEEK_SET) // rewind to output whole file
 		if err != nil {
-			reply.SetCode(http.StatusInternalServerError)
+			reply.SetStatusCode(http.StatusInternalServerError)
 			reply.With("seeker can't seek")
 			return
 		}
@@ -135,7 +135,7 @@ func serveContent(reply *Reply, r *http.Request, name string, modtime time.Time,
 
 	size, err := sizeFunc()
 	if err != nil {
-		reply.SetCode(http.StatusInternalServerError)
+		reply.SetStatusCode(http.StatusInternalServerError)
 		reply.With(err.Error())
 		return
 	}
@@ -145,7 +145,7 @@ func serveContent(reply *Reply, r *http.Request, name string, modtime time.Time,
 	if size >= 0 {
 		ranges, err := parseRange(rangeReq, size)
 		if err != nil {
-			reply.SetCode(http.StatusRequestedRangeNotSatisfiable).With(err.Error())
+			reply.SetStatusCode(http.StatusRequestedRangeNotSatisfiable).With(err.Error())
 		}
 		if sumRangesSize(ranges) > size {
 			ranges = nil
@@ -154,7 +154,7 @@ func serveContent(reply *Reply, r *http.Request, name string, modtime time.Time,
 		case len(ranges) == 1:
 			ra := ranges[0]
 			if _, err := content.Seek(ra.start, os.SEEK_SET); err != nil {
-				reply.SetCode(http.StatusRequestedRangeNotSatisfiable).With(err.Error())
+				reply.SetStatusCode(http.StatusRequestedRangeNotSatisfiable).With(err.Error())
 				return
 			}
 			sendSize = ra.length
@@ -194,13 +194,13 @@ func serveContent(reply *Reply, r *http.Request, name string, modtime time.Time,
 			reply.SetHeader("Content-Length", strconv.FormatInt(sendSize, 10))
 		}
 	}
-	reply.SetCode(code)
+	reply.SetStatusCode(code)
 	if r.Method != "HEAD" {
 		reply.With(io.LimitReader(sendContent, sendSize))
 	}
 }
 
-func checkLastModified(reply *Reply, r *http.Request, modtime time.Time) bool {
+func checkLastModified(reply Reply, r *http.Request, modtime time.Time) bool {
 	if modtime.IsZero() {
 		return false
 	}
@@ -210,14 +210,14 @@ func checkLastModified(reply *Reply, r *http.Request, modtime time.Time) bool {
 	if t, err := time.Parse(http.TimeFormat, r.Header.Get("If-Modified-Since")); err == nil && modtime.Before(t.Add(time.Second)) {
 		reply.DelHeader("Content-Type")
 		reply.DelHeader("Content-Length")
-		reply.SetCode(http.StatusNotModified)
+		reply.SetStatusCode(http.StatusNotModified)
 		return true
 	}
 	reply.SetHeader("Last-Modified", modtime.UTC().Format(http.TimeFormat))
 	return false
 }
 
-func dirList(reply *Reply, f http.File) {
+func dirList(reply Reply, f http.File) {
 	reply.SetHeader("Content-Type", "text/html; charset=utf-8")
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString("<pre>\n")
@@ -242,7 +242,7 @@ func dirList(reply *Reply, f http.File) {
 	reply.With(buf)
 }
 
-func checkETag(reply *Reply, r *http.Request, modtime time.Time) (rangeReq string, done bool) {
+func checkETag(reply Reply, r *http.Request, modtime time.Time) (rangeReq string, done bool) {
 	etag := reply.GetHeader("Etag")
 	rangeReq = r.Header.Get("Range")
 
@@ -282,7 +282,7 @@ func checkETag(reply *Reply, r *http.Request, modtime time.Time) (rangeReq strin
 			//			h := w.Header()
 			reply.DelHeader("Content-Type")
 			reply.DelHeader("Content-Length")
-			reply.SetCode(http.StatusNotModified)
+			reply.SetStatusCode(http.StatusNotModified)
 			return "", true
 		}
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/coffeehc/logger"
 )
 
-type uriPatternMatcher interface {
+type UriPatternMatcher interface {
 	match(uri string) bool
 }
 
@@ -17,7 +17,7 @@ type servletStyleUriPatternMatcher struct {
 	patternKind int //0:PREFIX 1:SUFFIX 2:LITERAL
 }
 
-func newServletStyleUriPatternMatcher(uriPattern string) uriPatternMatcher {
+func newServletStyleUriPatternMatcher(uriPattern string) UriPatternMatcher {
 	matcher := new(servletStyleUriPatternMatcher)
 	if strings.HasPrefix(uriPattern, "*") {
 		matcher.pattern = string([]byte(uriPattern)[1:])
@@ -29,7 +29,7 @@ func newServletStyleUriPatternMatcher(uriPattern string) uriPatternMatcher {
 		matcher.pattern = uriPattern
 		matcher.patternKind = 2
 	}
-	return uriPatternMatcher(matcher)
+	return UriPatternMatcher(matcher)
 }
 func (this *servletStyleUriPatternMatcher) match(uri string) bool {
 	if uri == "" {
@@ -49,7 +49,7 @@ type regexUriPatternMatcher struct {
 	pattern *regexp.Regexp
 }
 
-func newRegexUriPatternMatcher(uriPattern string) uriPatternMatcher {
+func newRegexUriPatternMatcher(uriPattern string) UriPatternMatcher {
 	matcher := new(regexUriPatternMatcher)
 	var err error
 	matcher.pattern, err = regexp.Compile(uriPattern)
@@ -57,7 +57,7 @@ func newRegexUriPatternMatcher(uriPattern string) uriPatternMatcher {
 		logger.Error("编译正则表达式[%s]异常,%s", uriPattern, err)
 		return nil
 	}
-	return uriPatternMatcher(matcher)
+	return UriPatternMatcher(matcher)
 }
 
 func (this *regexUriPatternMatcher) match(uri string) bool {

@@ -16,36 +16,36 @@ const (
 	_conversion     = "[A-Za-z0-9]*"
 )
 
-type routingDispatcher struct {
-	matcher actionMatcher
+type router struct {
+	matcher handlerMatcher
 	filter  *filterWarp
 }
 
-func newRoutingDispatcher() *routingDispatcher {
-	route := &routingDispatcher{matcher: actionMatcher{actionHandlerMap: make(map[HttpMethod]actionHandlerList)}}
+func newRouter() *router {
+	route := &router{matcher: handlerMatcher{requestHandlerMap: make(map[HttpMethod]requestHandlerList)}}
 	route.filter = &filterWarp{
 		matcher: newServletStyleUriPatternMatcher("/*"),
-		actionFilter: func(request *http.Request, reply *Reply, chain FilterChain) {
+		requestFilter: func(request *http.Request, reply Reply, chain FilterChain) {
 			defer func() {
 				if ok := recover(); ok != nil {
-					reply.SetCode(500).With(fmt.Sprintf("500:%#s", ok))
+					reply.SetStatusCode(500).With(fmt.Sprintf("500:%#s", ok))
 				}
 			}()
 			chain(request, reply)
 		},
-		requestHandle: route.handle,
+		filterChainFunc: route.handle,
 	}
 	return route
 }
 
-func (route *routingDispatcher) addFilter(matcher uriPatternMatcher, actionFilter ActionFilter) {
+func (route *router) addFilter(matcher UriPatternMatcher, actionFilter Filter) {
 	route.filter.addNextFilter(newFilterWarp(matcher, actionFilter))
 }
 
-func (route *routingDispatcher) handle(request *http.Request, reply *Reply) {
+func (route *router) handle(request *http.Request, reply Reply) {
 	handler := route.matcher.getActionHandler(request.URL.Path, HttpMethod(strings.ToUpper(request.Method)))
 	if handler == nil {
-		reply.SetCode(404).With("404:you are lost")
+		reply.SetStatusCode(404).With("404:you are lost")
 		logger.Error("Not found Handler for[%s] [%s]", strings.ToUpper(request.Method), request.URL.Path)
 		return
 	}
