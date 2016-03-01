@@ -2,40 +2,39 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/coffeehc/logger"
+	"github.com/coffeehc/utils"
 	"github.com/coffeehc/web"
+	"github.com/coffeehc/web/pprof"
+	"os"
 )
 
 func main() {
-	tlsConfig, err := web.NewTLSConfig("server.crt", "server.key")
-	if err != nil {
-		logger.Error("证书初始化失败,%s", err)
-		time.Sleep(time.Second)
-		return
+	logger.InitLogger()
+	config := &web.ServerConfig{
+		OpenTLS:         true,
+		CertFile:        "server.crt",
+		KeyFile:         "server.key",
+		HttpErrorLogout: os.Stderr,
 	}
-	serConfig := new(web.ServerConfig)
-	serConfig.TLSConfig = tlsConfig
-	serConfig.OpenHttp2 = true
-	server := web.NewServer(serConfig)
+	server := web.NewServer(config)
+	pprof.RegeditPprof(server)
 	server.Regedit("/test", web.GET, TestService)
 	server.Regedit("/reqinfo", web.GET, reqInfoHandler)
 	server.Regedit("/a/{name}/123", web.GET, Service)
-	server.AddFilter("/*", web.AccessLogFilter)
+	server.AddFilter("/*", web.SimpleAccessLogFilter)
 	server.Start()
-	time.Sleep(time.Second * 120)
-	server.Stop()
+	utils.WaitStop()
 }
 
-func reqInfoHandler(r *http.Request, param map[string]string, reply *web.Reply) {
-	stream := reply.OpenStream()
+func reqInfoHandler(r *http.Request, param map[string]string, reply web.Reply) {
+	stream := reply.GetResponseWriter()
 	fmt.Fprintf(stream, "Method: %s\n", r.Method)
 	fmt.Fprintf(stream, "Protocol: %s\n", r.Proto)
 	fmt.Fprintf(stream, "Host: %s\n", r.Host)
@@ -49,25 +48,25 @@ func reqInfoHandler(r *http.Request, param map[string]string, reply *web.Reply) 
 	r.Header.Write(stream)
 }
 
-func Service(request *http.Request, param map[string]string, reply *web.Reply) {
+func Service(request *http.Request, param map[string]string, reply web.Reply) {
 	reply.With("123" + param["name"])
-	panic(errors.New("test error"))
+	panic(web.HTTPERR_400("testtest 400"))
 }
 
-func TestService(request *http.Request, param map[string]string, reply *web.Reply) {
-	stream := reply.OpenStream()
-	clientGone := stream.CloseNotify()
+func TestService(request *http.Request, param map[string]string, reply web.Reply) {
+	stream := reply.GetResponseWriter()
+	clientGone := stream.(http.CloseNotifier).CloseNotify()
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 	fmt.Fprintf(stream, "# ~1KB of junk to force browsers to start rendering immediately: \n")
 	io.WriteString(stream, strings.Repeat("# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n", 13))
 	for {
 		fmt.Fprintf(stream, "%v\n", time.Now())
-		stream.Flush()
+		stream.(http.Flusher).Flush()
 		select {
 		case <-ticker.C:
 		case <-clientGone:
-			log.Printf("Client %v disconnected from the clock", request.RemoteAddr)
+			logger.Info("Client %v disconnected from the clock", request.RemoteAddr)
 			return
 		}
 	}

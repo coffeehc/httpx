@@ -39,7 +39,10 @@ func (this *requestHandler) doAction(request *http.Request, reply Reply) {
 
 //用于匹配是否
 func (this *requestHandler) match(uri string) bool {
-	return this.exp.MatchString(uri)
+	if this.hasPathFragments {
+		return this.exp.MatchString(uri)
+	}
+	return this.defineUri == uri
 }
 
 func buildRequestHandler(path string, method HttpMethod, requestHandlerFunc RequestHandler) (*requestHandler, error) {
@@ -64,6 +67,9 @@ func buildRequestHandler(path string, method HttpMethod, requestHandlerFunc Requ
 	}
 	if conversionUri == "" {
 		conversionUri = PATH_SEPARATOR
+	}
+	if strings.HasSuffix(path, PATH_SEPARATOR) {
+		conversionUri += PATH_SEPARATOR
 	}
 	exp, err := regexp.Compile("^" + conversionUri + "$")
 	if err != nil {

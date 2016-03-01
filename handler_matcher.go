@@ -27,7 +27,7 @@ func (this *handlerMatcher) regeditAction(path string, method HttpMethod, reques
 		}
 	}
 	this.requestHandlerMap[method] = append(actionHandlers, newActionHandler)
-	logger.Debug("添加[%s] [%s] 对应的 Handler {%#t}", method, path, requestHandler)
+	logger.Debug("添加[%s] [%s] 对应的 Handler {%#v}", method, path, requestHandler)
 	return nil
 }
 
@@ -37,7 +37,6 @@ func (this *handlerMatcher) getActionHandler(uri string, method HttpMethod) *req
 		logger.Error("没有注册对应的Handler")
 		return nil
 	}
-	//logger.Debug("%#q",actionHandlers)
 	paths := strings.Split(uri, PATH_SEPARATOR)
 	pathSize := len(paths)
 	for _, handler := range actionHandlers {

@@ -5,7 +5,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -19,15 +18,8 @@ type ServerConfig struct {
 	ConnState       func(net.Conn, http.ConnState)
 	HttpErrorLogout io.Writer
 	OpenTLS         bool
-	certFile        string
-	keyFile         string
-}
-
-func (this *ServerConfig) getHttpErrorLogout() io.Writer {
-	if this.HttpErrorLogout == nil {
-		this.HttpErrorLogout = os.Stderr
-	}
-	return this.HttpErrorLogout
+	CertFile        string
+	KeyFile         string
 }
 
 func (this *ServerConfig) getServerAddr() string {

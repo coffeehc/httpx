@@ -19,6 +19,9 @@ type Server struct {
 
 //创建一个Server,参数可以为空,默认使用0.0.0.0:8888
 func NewServer(serverConfig *ServerConfig) *Server {
+	if serverConfig == nil {
+		serverConfig = new(ServerConfig)
+	}
 	return &Server{router: newRouter(), config: serverConfig}
 }
 
@@ -34,13 +37,15 @@ func (this *Server) Start() error {
 		TLSConfig:      conf.TLSConfig,
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
-		ErrorLog:       logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout),
+	}
+	if conf.HttpErrorLogout != nil {
+		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
 	}
 	this.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
 	if conf.OpenTLS {
 		go func() {
-			err := server.ListenAndServeTLS(conf.certFile, conf.keyFile)
+			err := server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
 			logger.Error("启动 HttpServer 失败:%s", err)
 		}()
 	} else {
@@ -60,11 +65,17 @@ func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, reques
 
 }
 
+func (server *Server) RegeditHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error {
+	return server.RegeditHttpHandler(path, method, handlerFunc)
+}
+
 //适配 Http原生的 Handler 接口
 func (server *Server) RegeditHttpHandler(path string, method HttpMethod, handler http.Handler) error {
-	return server.Regedit(path, method, func(request *http.Request, pathFragments map[string]string, reply Reply) {
-		handler(reply.GetResponseWriter(), request)
-	})
+	requestHandler := func(request *http.Request, pathFragments map[string]string, reply Reply) {
+		reply.AdapterHttpHander(true)
+		handler.ServeHTTP(reply.GetResponseWriter(), request)
+	}
+	return server.Regedit(path, method, requestHandler)
 }
 
 func (server *Server) Regedit(path string, method HttpMethod, requestHandler RequestHandler) error {

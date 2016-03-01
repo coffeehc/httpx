@@ -9,7 +9,6 @@ import (
 )
 
 type Reply interface {
-	//http.ResponseWriter
 	GetStatusCode() int
 	SetStatusCode(statusCode int) Reply
 	GetContentType() string
@@ -25,18 +24,20 @@ type Reply interface {
 	With(data interface{}) Reply
 	As(transport Transport) Reply
 	GetResponseWriter() http.ResponseWriter
+	AdapterHttpHander(adapter bool)
 }
 
 type httpReply struct {
-	statusCode     int
-	data           interface{}
-	header         http.Header
-	cookies        []http.Cookie
-	redirect       bool
-	transport      Transport
-	contentType    string
-	openStream     bool
-	responseWriter http.ResponseWriter
+	statusCode        int
+	data              interface{}
+	header            http.Header
+	cookies           []http.Cookie
+	redirect          bool
+	transport         Transport
+	contentType       string
+	openStream        bool
+	responseWriter    http.ResponseWriter
+	adapterHttpHander bool
 }
 
 func newHttpReply(responseWriter http.ResponseWriter) *httpReply {
@@ -47,6 +48,10 @@ func newHttpReply(responseWriter http.ResponseWriter) *httpReply {
 		responseWriter: responseWriter,
 		header:         responseWriter.Header(),
 	}
+}
+
+func (this *httpReply) AdapterHttpHander(adapter bool) {
+	this.adapterHttpHander = adapter
 }
 
 func (this *httpReply) GetStatusCode() int {
@@ -118,6 +123,9 @@ func (this *httpReply) GetResponseWriter() http.ResponseWriter {
 
 //Reply 最后的清理工作
 func (this *httpReply) finishReply() {
+	if this.adapterHttpHander {
+		return
+	}
 	this.writeWarpHeader()
 	this.responseWriter.WriteHeader(this.GetStatusCode())
 	if this.redirect {
