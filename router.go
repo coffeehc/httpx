@@ -13,7 +13,7 @@ const (
 	PATH_SEPARATOR  = "/"
 	WILDCARD_PREFIX = "{"
 	WILDCARD_SUFFIX = "}"
-	_conversion     = "[A-Za-z0-9]*"
+	_conversion     = "[^/]*"
 )
 
 type router struct {
@@ -35,13 +35,12 @@ func newRouter() *router {
 					if httpErr, ok = err.(*HttpError); !ok {
 						httpErr = HTTPERR_500(fmt.Sprintf("%#s", err))
 					}
+					defer reply.SetStatusCode(httpErr.Code)
 					if handler, ok := _router.errorHandlers[httpErr.Code]; ok {
-						reply.GetResponseWriter().WriteHeader(httpErr.Code)
 						handler(request, httpErr, reply)
 						return
 					}
-					reply.SetStatusCode(httpErr.Code)
-					reply.With(httpErr.Message)
+					reply.With(httpErr.Message).As(Transport_Json)
 				}
 			}()
 			chain(request, reply)
@@ -51,7 +50,15 @@ func newRouter() *router {
 	return _router
 }
 
-func (route *router) addFilter(matcher UriPatternMatcher, actionFilter Filter) {
+func (router *router) addFirstFilter(matcher UriPatternMatcher, actionFilter Filter) {
+	oldFilter := router.filter
+	newFilter := newFilterWarp(matcher, actionFilter)
+	newFilter.nextFilter = oldFilter
+	router.filter = newFilter
+
+}
+
+func (route *router) addLastFilter(matcher UriPatternMatcher, actionFilter Filter) {
 	route.filter.addNextFilter(newFilterWarp(matcher, actionFilter))
 }
 

@@ -2,6 +2,7 @@ package web
 
 import (
 	"crypto/tls"
+	"github.com/coffeehc/render"
 	"io"
 	"net"
 	"net/http"
@@ -20,6 +21,14 @@ type ServerConfig struct {
 	OpenTLS         bool
 	CertFile        string
 	KeyFile         string
+	Render          *render.Render
+}
+
+func (this *ServerConfig) GetRender() *render.Render {
+	if this.Render == nil {
+		this.Render = render.New()
+	}
+	return this.Render
 }
 
 func (this *ServerConfig) getServerAddr() string {

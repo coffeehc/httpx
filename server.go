@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"fmt"
 	"github.com/coffeehc/logger"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
@@ -59,9 +60,24 @@ func (this *Server) Start() error {
 
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
-	httpReply := newHttpReply(responseWriter)
-	defer httpReply.finishReply()
-	this.router.filter.doFilter(request, httpReply)
+	reply := newHttpReply(responseWriter)
+	defer func() {
+		if err := recover(); err != nil {
+			var httpErr *HttpError
+			var ok bool
+			if httpErr, ok = err.(*HttpError); !ok {
+				httpErr = HTTPERR_500(fmt.Sprintf("%#s", err))
+			}
+			defer reply.SetStatusCode(httpErr.Code)
+			if handler, ok := this.router.errorHandlers[httpErr.Code]; ok {
+				handler(request, httpErr, reply)
+				return
+			}
+			reply.With(httpErr.Message).As(Transport_Json)
+		}
+		reply.finishReply(request, this.config.GetRender())
+	}()
+	this.router.filter.doFilter(request, reply)
 
 }
 
@@ -86,12 +102,16 @@ func (server *Server) Regedit(path string, method HttpMethod, requestHandler Req
 	return err
 }
 
-func (server *Server) AddFilter(uriPattern string, actionFilter Filter) {
-	server.router.addFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
+func (server *Server) AddFirstFilter(uriPattern string, actionFilter Filter) {
+	server.router.addFirstFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
+}
+
+func (server *Server) AddLastFilter(uriPattern string, actionFilter Filter) {
+	server.router.addLastFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
 }
 
 func (server *Server) AddFilterWithRegex(uriPattern string, actionFilter Filter) {
-	server.router.addFilter(newRegexUriPatternMatcher(uriPattern), actionFilter)
+	server.router.addLastFilter(newRegexUriPatternMatcher(uriPattern), actionFilter)
 }
 
 func (server *Server) AddReqeuseErrorHandler(code int, handler RequestErrorHandler) error {

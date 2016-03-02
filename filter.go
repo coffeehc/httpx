@@ -54,18 +54,15 @@ func SimpleAccessLogFilter(request *http.Request, reply Reply, chain FilterChain
 	t1 := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
-			if httpError, ok := err.(*HttpError); ok {
-				reply.SetStatusCode(httpError.Code)
-			}
-			pringAccessLog(t1, request, reply)
+			printAccessLog(t1, request, reply)
 			panic(err)
 		}
 	}()
 	chain(request, reply)
-	pringAccessLog(t1, request, reply)
+	printAccessLog(t1, request, reply)
 }
 
-func pringAccessLog(startTime time.Time, request *http.Request, reply Reply) {
+func printAccessLog(startTime time.Time, request *http.Request, reply Reply) {
 	delay := time.Since(startTime)
 	addr, err := net.ResolveTCPAddr("tcp", request.RemoteAddr)
 	var ip string

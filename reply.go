@@ -2,17 +2,14 @@
 package web
 
 import (
-	"io"
 	"net/http"
 
-	"github.com/coffeehc/logger"
+	"github.com/coffeehc/render"
 )
 
 type Reply interface {
 	GetStatusCode() int
 	SetStatusCode(statusCode int) Reply
-	GetContentType() string
-	SetContentType(contentType string) Reply
 	SetCookie(cookie http.Cookie) Reply
 	SetHeader(key, value string) Reply
 	AddHeader(key, value string) Reply
@@ -32,10 +29,7 @@ type httpReply struct {
 	data              interface{}
 	header            http.Header
 	cookies           []http.Cookie
-	redirect          bool
 	transport         Transport
-	contentType       string
-	openStream        bool
 	responseWriter    http.ResponseWriter
 	adapterHttpHander bool
 }
@@ -43,7 +37,7 @@ type httpReply struct {
 func newHttpReply(responseWriter http.ResponseWriter) *httpReply {
 	return &httpReply{
 		statusCode:     200,
-		transport:      Default_StringTransport,
+		transport:      Transport_Text,
 		cookies:        make([]http.Cookie, 0),
 		responseWriter: responseWriter,
 		header:         responseWriter.Header(),
@@ -60,15 +54,6 @@ func (this *httpReply) GetStatusCode() int {
 
 func (this *httpReply) SetStatusCode(statusCode int) Reply {
 	this.statusCode = statusCode
-	return this
-}
-
-func (this *httpReply) GetContentType() string {
-	return this.contentType
-}
-
-func (this *httpReply) SetContentType(contentType string) Reply {
-	this.contentType = contentType
 	return this
 }
 
@@ -99,7 +84,6 @@ func (this *httpReply) Header() http.Header {
 }
 
 func (this *httpReply) Redirect(code int, url string) Reply {
-	this.redirect = true
 	this.responseWriter.Header().Set("Location", url)
 	this.statusCode = code
 	return this
@@ -122,48 +106,21 @@ func (this *httpReply) GetResponseWriter() http.ResponseWriter {
 }
 
 //Reply 最后的清理工作
-func (this *httpReply) finishReply() {
+func (this *httpReply) finishReply(request *http.Request, render *render.Render) {
 	if this.adapterHttpHander {
 		return
 	}
 	this.writeWarpHeader()
-	this.responseWriter.WriteHeader(this.GetStatusCode())
-	if this.redirect {
+	if this.data != nil {
+		this.transport(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
 		return
 	}
-	if this.data != nil {
-		if reader, ok := this.data.(io.Reader); ok {
-			_, err := io.Copy(this.responseWriter, reader)
-			if err != nil {
-				logger.Error("数据输出出现错误:%s", err)
-				return
-			}
-			if limitReader, ok := this.data.(*io.LimitedReader); ok {
-				reader = limitReader.R
-				if closer, ok := reader.(io.Closer); ok {
-					closer.Close()
-				}
-			}
-			if closer, ok := this.data.(io.Closer); ok {
-				closer.Close()
-			}
-		} else {
-			err := this.transport.Out(this.responseWriter, this.data)
-			if err != nil {
-				logger.Error("数据序列化失败:%s", err)
-			}
-		}
-	}
+	Transport_Text(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
 }
 
 func (this *httpReply) writeWarpHeader() {
 	header := this.Header()
 	for _, cookie := range this.cookies {
 		header.Set("Set-Cookie", cookie.String())
-	}
-	if this.contentType != "" {
-		header.Set("Content-Type", this.contentType)
-	} else {
-		header.Set("Content-Type", this.transport.ContentType())
 	}
 }

@@ -14,7 +14,7 @@ func RegeditStaticFilter(server *web.Server, uriPattern string, staticDir string
 		uriPattern = uriPattern + "*"
 	}
 	handler := http.StripPrefix(string(uriPattern[:len(uriPattern)-1]), http.FileServer(http.Dir(staticDir)))
-	server.AddFilter(uriPattern, func(request *http.Request, reply web.Reply, chain web.FilterChain) {
+	server.AddLastFilter(uriPattern, func(request *http.Request, reply web.Reply, chain web.FilterChain) {
 		reply.AdapterHttpHander(true)
 		handler.ServeHTTP(reply.GetResponseWriter(), request)
 	})
