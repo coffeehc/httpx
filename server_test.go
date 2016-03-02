@@ -4,19 +4,21 @@ package web
 import (
 	"errors"
 	"fmt"
+	"github.com/coffeehc/logger"
 	"net/http"
 	"testing"
 	"time"
 )
 
 func TestServer(t *testing.T) {
+	logger.InitLogger()
 	server := NewServer(nil)
 	server.Regedit("/a/{name}/123", GET, Service)
 	server.Regedit("/a/123/{name}", GET, testService)
 	server.RegeditWebSocket("/api/websocket", WebsocketTest)
-	server.AddFilter("/*", AccessLogFilter)
+	server.AddLastFilter("/*", AccessLogFilter)
 	server.Start()
-	time.Sleep(time.Second * 60)
+	time.Sleep(time.Second * 160)
 	server.Stop()
 }
 
