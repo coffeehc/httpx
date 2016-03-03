@@ -60,7 +60,7 @@ func (this *Server) Start() error {
 
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
-	reply := newHttpReply(responseWriter)
+	reply := newHttpReply(responseWriter, this.config)
 	defer func() {
 		if err := recover(); err != nil {
 			var httpErr *HttpError

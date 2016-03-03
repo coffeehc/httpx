@@ -34,10 +34,10 @@ type httpReply struct {
 	adapterHttpHander bool
 }
 
-func newHttpReply(responseWriter http.ResponseWriter) *httpReply {
+func newHttpReply(responseWriter http.ResponseWriter, config *ServerConfig) *httpReply {
 	return &httpReply{
 		statusCode:     200,
-		transport:      Transport_Text,
+		transport:      config.getDefaultTransport(),
 		cookies:        make([]http.Cookie, 0),
 		responseWriter: responseWriter,
 		header:         responseWriter.Header(),
