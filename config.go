@@ -10,18 +10,26 @@ import (
 )
 
 type ServerConfig struct {
-	ServerAddr      string
-	ReadTimeout     time.Duration // 读的最大Timeout时间
-	WriteTimeout    time.Duration // 写的最大Timeout时间
-	MaxHeaderBytes  int           // 请求头的最大长度
-	TLSConfig       *tls.Config   // 配置TLS
-	TLSNextProto    map[string]func(*http.Server, *tls.Conn, http.Handler)
-	ConnState       func(net.Conn, http.ConnState)
-	HttpErrorLogout io.Writer
-	OpenTLS         bool
-	CertFile        string
-	KeyFile         string
-	Render          *render.Render
+	ServerAddr       string
+	ReadTimeout      time.Duration // 读的最大Timeout时间
+	WriteTimeout     time.Duration // 写的最大Timeout时间
+	MaxHeaderBytes   int           // 请求头的最大长度
+	TLSConfig        *tls.Config   // 配置TLS
+	TLSNextProto     map[string]func(*http.Server, *tls.Conn, http.Handler)
+	ConnState        func(net.Conn, http.ConnState)
+	HttpErrorLogout  io.Writer
+	OpenTLS          bool
+	CertFile         string
+	KeyFile          string
+	DefaultTransport Transport
+	Render           *render.Render
+}
+
+func (this *ServerConfig) getDefaultTransport() Transport {
+	if this.DefaultTransport == nil {
+		this.DefaultTransport = Transport_Text
+	}
+	return this.DefaultTransport
 }
 
 func (this *ServerConfig) GetRender() *render.Render {
