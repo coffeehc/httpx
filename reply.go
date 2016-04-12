@@ -112,10 +112,9 @@ func (this *httpReply) finishReply(request *http.Request, render *render.Render)
 	}
 	this.writeWarpHeader()
 	if this.data != nil {
-		this.transport(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
-		return
+		this.data = ""
 	}
-	Transport_Text(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
+	this.transport(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
 }
 
 func (this *httpReply) writeWarpHeader() {
