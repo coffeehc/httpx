@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func RegeditStaticFilter(server *web.Server, uriPattern string, staticDir string) {
+func RegisterStaticFilter(server *web.Server, uriPattern string, staticDir string) {
 	lastChar := uriPattern[len(uriPattern)-1]
 	if lastChar != '*' {
 		if lastChar != '/' {

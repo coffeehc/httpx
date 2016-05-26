@@ -58,6 +58,10 @@ func (this *Server) Start() error {
 	return nil
 }
 
+func (this *Server) GetServerAddress() string {
+	return this.config.getServerAddr()
+}
+
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)

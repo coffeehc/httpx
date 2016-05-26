@@ -111,7 +111,7 @@ func (this *httpReply) finishReply(request *http.Request, render *render.Render)
 		return
 	}
 	this.writeWarpHeader()
-	if this.data != nil {
+	if this.data == nil {
 		this.data = ""
 	}
 	this.transport(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
