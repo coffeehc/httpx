@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func RegisterStaticFilter(server *web.Server, uriPattern string, staticDir string) {
+func RegisterStaticFilter(server *web.Server, uriPattern string, staticDir string) http.Handler {
 	lastChar := uriPattern[len(uriPattern)-1]
 	if lastChar != '*' {
 		if lastChar != '/' {
@@ -18,4 +18,5 @@ func RegisterStaticFilter(server *web.Server, uriPattern string, staticDir strin
 		reply.AdapterHttpHander(true)
 		handler.ServeHTTP(reply.GetResponseWriter(), request)
 	})
+	return handler
 }

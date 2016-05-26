@@ -6,5 +6,5 @@ import (
 )
 
 func RegeditWebSocket(server web.Server, path string, service websocket.Handler) error {
-	return server.RegeditHttpHandler(path, web.GET, service)
+	return server.RegisterHttpHandler(path, web.GET, service)
 }

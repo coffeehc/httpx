@@ -86,20 +86,20 @@ func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, reques
 
 }
 
-func (server *Server) RegeditHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error {
-	return server.RegeditHttpHandler(path, method, handlerFunc)
+func (server *Server) RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error {
+	return server.RegisterHttpHandler(path, method, handlerFunc)
 }
 
 //适配 Http原生的 Handler 接口
-func (server *Server) RegeditHttpHandler(path string, method HttpMethod, handler http.Handler) error {
+func (server *Server) RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error {
 	requestHandler := func(request *http.Request, pathFragments map[string]string, reply Reply) {
 		reply.AdapterHttpHander(true)
 		handler.ServeHTTP(reply.GetResponseWriter(), request)
 	}
-	return server.Regedit(path, method, requestHandler)
+	return server.Register(path, method, requestHandler)
 }
 
-func (server *Server) Regedit(path string, method HttpMethod, requestHandler RequestHandler) error {
+func (server *Server) Register(path string, method HttpMethod, requestHandler RequestHandler) error {
 	err := server.router.matcher.regeditAction(path, method, requestHandler)
 	if err != nil {
 		logger.Error("注册 Handler 失败:%s", err)
@@ -119,7 +119,7 @@ func (server *Server) AddFilterWithRegex(uriPattern string, actionFilter Filter)
 	server.router.addLastFilter(newRegexUriPatternMatcher(uriPattern), actionFilter)
 }
 
-func (server *Server) AddReqeuseErrorHandler(code int, handler RequestErrorHandler) error {
+func (server *Server) AddRequestErrorHandler(code int, handler RequestErrorHandler) error {
 	if _, ok := server.router.errorHandlers[code]; ok {
 		return errors.New(logger.Error("已经注册了[%d]异常响应码的处理方法,注册失败"))
 	}

@@ -13,8 +13,8 @@ import (
 func TestServer(t *testing.T) {
 	logger.InitLogger()
 	server := NewServer(nil)
-	server.Regedit("/a/{name}/123", GET, Service)
-	server.Regedit("/a/123/{name}", GET, testService)
+	server.Register("/a/{name}/123", GET, Service)
+	server.Register("/a/123/{name}", GET, testService)
 	server.RegeditWebSocket("/api/websocket", WebsocketTest)
 	server.AddLastFilter("/*", AccessLogFilter)
 	server.Start()
