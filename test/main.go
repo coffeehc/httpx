@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"os"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/utils"
 	"github.com/coffeehc/web"
 	"github.com/coffeehc/web/pprof"
-	"os"
 )
 
 func ExampleMain() {

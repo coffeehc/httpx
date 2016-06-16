@@ -2,9 +2,10 @@ package web
 
 import (
 	"errors"
-	"github.com/coffeehc/logger"
 	"sort"
 	"strings"
+
+	"github.com/coffeehc/logger"
 )
 
 type handlerMatcher struct {

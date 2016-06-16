@@ -2,8 +2,9 @@
 package pprof
 
 import (
-	"github.com/coffeehc/web"
 	"net/http/pprof"
+
+	"github.com/coffeehc/web"
 )
 
 func RegeditPprof(server *web.Server) {

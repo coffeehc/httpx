@@ -1,8 +1,9 @@
 package static
 
 import (
-	"github.com/coffeehc/web"
 	"net/http"
+
+	"github.com/coffeehc/web"
 )
 
 func RegisterStaticFilter(server *web.Server, uriPattern string, staticDir string) http.Handler {
@@ -15,7 +16,7 @@ func RegisterStaticFilter(server *web.Server, uriPattern string, staticDir strin
 	}
 	handler := http.StripPrefix(string(uriPattern[:len(uriPattern)-1]), http.FileServer(http.Dir(staticDir)))
 	server.AddLastFilter(uriPattern, func(request *http.Request, reply web.Reply, chain web.FilterChain) {
-		reply.AdapterHttpHander(true)
+		reply.AdapterHttpHandler(true)
 		handler.ServeHTTP(reply.GetResponseWriter(), request)
 	})
 	return handler

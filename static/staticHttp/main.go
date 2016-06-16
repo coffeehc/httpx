@@ -2,13 +2,14 @@ package main
 
 import (
 	"flag"
+	"net"
+	"os"
+	"time"
+
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/utils"
 	"github.com/coffeehc/web"
 	"github.com/coffeehc/web/static"
-	"net"
-	"os"
-	"time"
 )
 
 var (

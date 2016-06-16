@@ -2,10 +2,11 @@ package web
 
 import (
 	"errors"
-	"github.com/coffeehc/logger"
 	"net/http"
 	"regexp"
 	"strings"
+
+	"github.com/coffeehc/logger"
 )
 
 type RequestHandler func(request *http.Request, pathFragments map[string]string, reply Reply)

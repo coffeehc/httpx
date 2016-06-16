@@ -4,10 +4,11 @@ package web
 import (
 	"errors"
 	"fmt"
-	"github.com/coffeehc/logger"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/coffeehc/logger"
 )
 
 func TestServer(t *testing.T) {

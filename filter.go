@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/coffeehc/logger"
 	"net"
+
+	"github.com/coffeehc/logger"
 )
 
 type Filter func(request *http.Request, reply Reply, chain FilterChain)

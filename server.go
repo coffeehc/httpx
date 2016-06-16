@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"fmt"
+
 	"github.com/coffeehc/logger"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 )
@@ -93,7 +94,7 @@ func (server *Server) RegisterHttpHandlerFunc(path string, method HttpMethod, ha
 //适配 Http原生的 Handler 接口
 func (server *Server) RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error {
 	requestHandler := func(request *http.Request, pathFragments map[string]string, reply Reply) {
-		reply.AdapterHttpHander(true)
+		reply.AdapterHttpHandler(true)
 		handler.ServeHTTP(reply.GetResponseWriter(), request)
 	}
 	return server.Register(path, method, requestHandler)

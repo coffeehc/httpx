@@ -4,7 +4,7 @@ package web
 import (
 	"net/http"
 
-	"github.com/coffeehc/render"
+	"github.com/unrolled/render"
 )
 
 type Reply interface {
@@ -21,17 +21,19 @@ type Reply interface {
 	With(data interface{}) Reply
 	As(transport Transport) Reply
 	GetResponseWriter() http.ResponseWriter
-	AdapterHttpHander(adapter bool)
+	AdapterHttpHandler(adapter bool)
+	GetRequestContext() RequestContext
 }
 
 type httpReply struct {
-	statusCode        int
-	data              interface{}
-	header            http.Header
-	cookies           []http.Cookie
-	transport         Transport
-	responseWriter    http.ResponseWriter
-	adapterHttpHander bool
+	statusCode         int
+	data               interface{}
+	header             http.Header
+	cookies            []http.Cookie
+	transport          Transport
+	responseWriter     http.ResponseWriter
+	adapterHttpHandler bool
+	requestContext     RequestContext
 }
 
 func newHttpReply(responseWriter http.ResponseWriter, config *ServerConfig) *httpReply {
@@ -44,8 +46,15 @@ func newHttpReply(responseWriter http.ResponseWriter, config *ServerConfig) *htt
 	}
 }
 
-func (this *httpReply) AdapterHttpHander(adapter bool) {
-	this.adapterHttpHander = adapter
+func (this *httpReply) GetRequestContext() RequestContext {
+	if this.requestContext == nil {
+		this.requestContext = make(RequestContext)
+	}
+	return this.requestContext
+}
+
+func (this *httpReply) AdapterHttpHandler(adapter bool) {
+	this.adapterHttpHandler = adapter
 }
 
 func (this *httpReply) GetStatusCode() int {
@@ -107,7 +116,7 @@ func (this *httpReply) GetResponseWriter() http.ResponseWriter {
 
 //Reply 最后的清理工作
 func (this *httpReply) finishReply(request *http.Request, render *render.Render) {
-	if this.adapterHttpHander {
+	if this.adapterHttpHandler {
 		return
 	}
 	this.writeWarpHeader()
