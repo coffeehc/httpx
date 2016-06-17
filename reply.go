@@ -4,6 +4,8 @@ package web
 import (
 	"net/http"
 
+	"fmt"
+	"github.com/coffeehc/logger"
 	"github.com/unrolled/render"
 )
 
@@ -123,7 +125,11 @@ func (this *httpReply) finishReply(request *http.Request, render *render.Render)
 	if this.data == nil {
 		this.data = ""
 	}
-	this.transport(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
+	err := this.transport(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
+	if err != nil {
+		logger.Error("render error %#v", err)
+		Transport_Json(render, request, this.GetResponseWriter(), 500, fmt.Sprintf("render error :%s", err))
+	}
 }
 
 func (this *httpReply) writeWarpHeader() {

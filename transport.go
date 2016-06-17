@@ -95,7 +95,7 @@ type Stream struct {
 
 func (this Stream) Render(w http.ResponseWriter, reader io.Reader) error {
 	c := w.Header().Get(render.ContentType)
-	if c != "" {
+	if c != "" && this.Head.ContentType == "" {
 		this.Head.ContentType = c
 	}
 	this.Head.Write(w)

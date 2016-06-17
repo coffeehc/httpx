@@ -32,7 +32,7 @@ type ProtoBuf struct {
 
 func (this ProtoBuf) Render(w http.ResponseWriter, message proto.Message) error {
 	c := w.Header().Get(render.ContentType)
-	if c != "" {
+	if c != "" && this.Head.ContentType == "" {
 		this.Head.ContentType = c
 	}
 	this.Head.Write(w)
