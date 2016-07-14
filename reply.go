@@ -128,7 +128,7 @@ func (this *httpReply) finishReply(request *http.Request, render *render.Render)
 	err := this.transport(render, request, this.GetResponseWriter(), this.GetStatusCode(), this.data)
 	if err != nil {
 		logger.Error("render error %#v", err)
-		Transport_Json(render, request, this.GetResponseWriter(), 500, fmt.Sprintf("render error :%s", err))
+		Transport_Text(render, request, this.GetResponseWriter(), 500, fmt.Sprintf("render error :%s", err))
 	}
 }
 
