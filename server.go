@@ -8,12 +8,13 @@ import (
 
 	"fmt"
 
+	"errors"
 	"github.com/coffeehc/logger"
-	"github.com/syndtr/goleveldb/leveldb/errors"
+	"github.com/valyala/fasthttp"
 )
 
 type Server struct {
-	httpServer *http.Server
+	httpServer *fasthttp.Server
 	router     *router
 	listener   net.Listener
 	config     *ServerConfig
@@ -31,28 +32,35 @@ func (this *Server) Start() error {
 	logger.Debug("serverConfig is %#v", this.config)
 	this.router.matcher.sort()
 	conf := this.config
-	server := &http.Server{
-		Addr:           conf.getServerAddr(),
-		Handler:        http.HandlerFunc(this.serverHttpHandler),
-		ReadTimeout:    conf.getReadTimeout(),
-		MaxHeaderBytes: conf.MaxHeaderBytes,
-		TLSConfig:      conf.TLSConfig,
-		TLSNextProto:   conf.TLSNextProto,
-		ConnState:      conf.ConnState,
+	option := this.config.httpOption
+	server := &fasthttp.Server{
+		Handler:                       this.httpHandler,
+		Name:                          conf.GetName(),
+		Concurrency:                   option.GetConcurrency(),
+		DisableKeepalive:              option.GetDisableKeepalive(),
+		ReadBufferSize:                option.GetReadBufferSize(),
+		WriteBufferSize:               option.GetWriteBufferSize(),
+		ReadTimeout:                   option.GetReadTimeout(),
+		WriteTimeout:                  option.GetWriteTimeout(),
+		MaxConnsPerIP:                 option.GetMaxConnsPerIP(),
+		MaxRequestsPerConn:            option.GetMaxRequestsPerConn(),
+		MaxRequestBodySize:            option.GetMaxRequestBodySize(),
+		ReduceMemoryUsage:             option.GetReduceMemoryUsage(),
+		GetOnly:                       false,
+		LogAllErrors:                  true,
+		DisableHeaderNamesNormalizing: false,
+		Logger: httpLogger{},
 	}
-	if conf.HttpErrorLogout != nil {
-		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
-	}
-	this.httpServer = server
-	logger.Info("start HttpServer :%s", conf.getServerAddr())
+	//this.httpServer = server
+	logger.Info("start HttpServer :%s", conf.GetServerAddr())
 	if conf.OpenTLS {
 		go func() {
-			err := server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
+			err := server.ListenAndServeTLS(conf.GetServerAddr(), conf.CertFile, conf.KeyFile)
 			logger.Error("启动 HttpServer 失败:%s", err)
 		}()
 	} else {
 		go func() {
-			err := server.ListenAndServe()
+			err := server.ListenAndServe(conf.GetServerAddr())
 			logger.Error("启动 HttpServer 失败:%s", err)
 		}()
 	}
@@ -60,7 +68,11 @@ func (this *Server) Start() error {
 }
 
 func (this *Server) GetServerAddress() string {
-	return this.config.getServerAddr()
+	return this.config.GetServerAddr()
+}
+
+func (this *Server) httpHandler(ctx *fasthttp.RequestCtx) {
+	//TODO  没有实现啊!!!!
 }
 
 func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {

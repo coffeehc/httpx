@@ -41,7 +41,7 @@ type httpReply struct {
 func newHttpReply(responseWriter http.ResponseWriter, config *ServerConfig) *httpReply {
 	return &httpReply{
 		statusCode:     200,
-		transport:      config.getDefaultTransport(),
+		transport:      config.GetDefaultTransport(),
 		cookies:        make([]http.Cookie, 0),
 		responseWriter: responseWriter,
 		header:         responseWriter.Header(),

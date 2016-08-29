@@ -1,0 +1,15 @@
+[submodule "vendor/github.com/coffeehc/logger"]
+	path = vendor/github.com/coffeehc/logger
+	url = https://github.com/coffeehc/logger
+[submodule "vendor/github.com/coffeehc/utils"]
+	path = vendor/github.com/coffeehc/utils
+	url = https://github.com/coffeehc/utils
+[submodule "vendor/github.com/golang/protobuf"]
+	path = vendor/github.com/golang/protobuf
+	url = https://github.com/golang/protobuf
+[submodule "vendor/github.com/unrolled/render"]
+	path = vendor/github.com/unrolled/render
+	url = https://github.com/unrolled/render
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2
