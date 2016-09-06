@@ -6,7 +6,7 @@ import (
 	"github.com/unrolled/render"
 )
 
-type HttpOption struct {
+type ServerOption struct {
 	Concurrency        int   `yaml:"concurrency"`
 	DisableKeepalive   bool  `yaml:"disable_keepalive"`
 	ReadBufferSize     int   `yaml:"read_buffer_size"`
@@ -21,32 +21,32 @@ type HttpOption struct {
 	ReduceMemoryUsage  bool `yaml:"reduce_memory_usage"`
 }
 
-func (this *HttpOption) GetConcurrency() int {
+func (this *ServerOption) GetConcurrency() int {
 	if this.Concurrency < 10000 {
 		this.Concurrency = 100000
 	}
 	return this.Concurrency
 }
 
-func (this *HttpOption) GetDisableKeepalive() bool {
+func (this *ServerOption) GetDisableKeepalive() bool {
 	return this.DisableKeepalive
 }
 
-func (this *HttpOption) GetReadBufferSize() int {
+func (this *ServerOption) GetReadBufferSize() int {
 	if this.ReadBufferSize == 0 {
 		this.ReadBufferSize = 1024 * 1024
 	}
 	return this.ReadBufferSize
 }
 
-func (this *HttpOption) GetWriteBufferSize() int {
+func (this *ServerOption) GetWriteBufferSize() int {
 	if this.WriteBufferSize == 0 {
 		this.WriteBufferSize = 1024 * 1024
 	}
 	return this.WriteBufferSize
 }
 
-func (this *HttpOption) GetReadTimeout() time.Duration {
+func (this *ServerOption) GetReadTimeout() time.Duration {
 	if this._ReadTimeout == 0 {
 		if this.ReadTimeout == 0 {
 			this.ReadTimeout = 30
@@ -56,7 +56,7 @@ func (this *HttpOption) GetReadTimeout() time.Duration {
 	return this._ReadTimeout
 }
 
-func (this *HttpOption) GetWriteTimeout() time.Duration {
+func (this *ServerOption) GetWriteTimeout() time.Duration {
 	if this._WriteTimeout == 0 {
 		if this.WriteTimeout == 0 {
 			this.WriteTimeout = 60
@@ -66,35 +66,35 @@ func (this *HttpOption) GetWriteTimeout() time.Duration {
 	return this._WriteTimeout
 }
 
-func (this *HttpOption) GetMaxConnsPerIP() int {
+func (this *ServerOption) GetMaxConnsPerIP() int {
 	if this.MaxConnsPerIP == 0 {
 		this.MaxConnsPerIP = 1000
 	}
 	return this.MaxConnsPerIP
 }
 
-func (this *HttpOption) GetMaxRequestsPerConn() int {
+func (this *ServerOption) GetMaxRequestsPerConn() int {
 	if this.MaxRequestsPerConn == 0 {
 		this.MaxRequestsPerConn = 1000
 	}
 	return this.MaxRequestsPerConn
 }
 
-func (this *HttpOption) GetMaxRequestBodySize() int {
+func (this *ServerOption) GetMaxRequestBodySize() int {
 	if this.MaxRequestBodySize == 0 {
 		this.MaxRequestBodySize = 8 * 1024 * 1024
 	}
 	return this.MaxRequestBodySize
 }
 
-func (this *HttpOption) GetReduceMemoryUsage() bool {
+func (this *ServerOption) GetReduceMemoryUsage() bool {
 	return this.ReduceMemoryUsage
 }
 
-type ServerConfig struct {
-	Name       string `yaml:"name"`
-	httpOption *HttpOption
-	ServerAddr string
+type HttpServerConfig struct {
+	Name         string `yaml:"name"`
+	serverOption *ServerOption
+	ServerAddr   string
 	//ConnState        func(net.Conn, http.ConnState)
 	//HttpErrorLogout  io.Writer
 	OpenTLS          bool
@@ -104,28 +104,28 @@ type ServerConfig struct {
 	Render           *render.Render
 }
 
-func (this *ServerConfig) GetDefaultTransport() Transport {
+func (this *HttpServerConfig) GetDefaultTransport() Transport {
 	if this.DefaultTransport == nil {
 		this.DefaultTransport = Transport_Text
 	}
 	return this.DefaultTransport
 }
 
-func (this *ServerConfig) GetRender() *render.Render {
+func (this *HttpServerConfig) GetRender() *render.Render {
 	if this.Render == nil {
 		this.Render = render.New()
 	}
 	return this.Render
 }
 
-func (this *ServerConfig) GetServerAddr() string {
+func (this *HttpServerConfig) GetServerAddr() string {
 	if this.ServerAddr == "" {
 		this.ServerAddr = ":8888"
 	}
 	return this.ServerAddr
 }
 
-func (this *ServerConfig) GetName() string {
+func (this *HttpServerConfig) GetName() string {
 	if this.Name == "" {
 		this.Name = "coffee"
 	}

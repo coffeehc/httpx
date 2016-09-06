@@ -38,7 +38,7 @@ type httpReply struct {
 	requestContext     RequestContext
 }
 
-func newHttpReply(responseWriter http.ResponseWriter, config *ServerConfig) *httpReply {
+func newHttpReply(responseWriter http.ResponseWriter, config *HttpServerConfig) *httpReply {
 	return &httpReply{
 		statusCode:     200,
 		transport:      config.GetDefaultTransport(),

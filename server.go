@@ -13,26 +13,38 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type Server struct {
+type HttpServer interface {
+	Start() error
+	GetServerAddress() string
+	RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error
+	RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error
+	Register(path string, method HttpMethod, requestHandler RequestHandler) error
+	AddFirstFilter(uriPattern string, actionFilter Filter)
+	AddLastFilter(uriPattern string, actionFilter Filter)
+	AddFilterWithRegex(uriPattern string, actionFilter Filter)
+	AddRequestErrorHandler(code int, handler RequestErrorHandler) error
+}
+
+type _Server struct {
 	httpServer *fasthttp.Server
 	router     *router
 	listener   net.Listener
-	config     *ServerConfig
+	config     *HttpServerConfig
 }
 
 //创建一个Server,参数可以为空,默认使用0.0.0.0:8888
-func NewServer(serverConfig *ServerConfig) *Server {
+func NewServer(serverConfig *HttpServerConfig) HttpServer {
 	if serverConfig == nil {
-		serverConfig = new(ServerConfig)
+		serverConfig = new(HttpServerConfig)
 	}
-	return &Server{router: newRouter(), config: serverConfig}
+	return &_Server{router: newRouter(), config: serverConfig}
 }
 
-func (this *Server) Start() error {
+func (this *_Server) Start() error {
 	logger.Debug("serverConfig is %#v", this.config)
 	this.router.matcher.sort()
 	conf := this.config
-	option := this.config.httpOption
+	option := this.config.serverOption
 	server := &fasthttp.Server{
 		Handler:                       this.httpHandler,
 		Name:                          conf.GetName(),
@@ -51,7 +63,7 @@ func (this *Server) Start() error {
 		DisableHeaderNamesNormalizing: false,
 		Logger: httpLogger{},
 	}
-	//this.httpServer = server
+	this.httpServer = server
 	logger.Info("start HttpServer :%s", conf.GetServerAddr())
 	if conf.OpenTLS {
 		go func() {
@@ -67,15 +79,16 @@ func (this *Server) Start() error {
 	return nil
 }
 
-func (this *Server) GetServerAddress() string {
+func (this *_Server) GetServerAddress() string {
 	return this.config.GetServerAddr()
 }
 
-func (this *Server) httpHandler(ctx *fasthttp.RequestCtx) {
+func (this *_Server) httpHandler(ctx *fasthttp.RequestCtx) {
 	//TODO  没有实现啊!!!!
+	logger.Error("没有实现啊")
 }
 
-func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
+func (this *_Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
 	reply := newHttpReply(responseWriter, this.config)
@@ -99,12 +112,12 @@ func (this *Server) serverHttpHandler(responseWriter http.ResponseWriter, reques
 
 }
 
-func (server *Server) RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error {
+func (server *_Server) RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error {
 	return server.RegisterHttpHandler(path, method, handlerFunc)
 }
 
 //适配 Http原生的 Handler 接口
-func (server *Server) RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error {
+func (server *_Server) RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error {
 	requestHandler := func(request *http.Request, pathFragments map[string]string, reply Reply) {
 		reply.AdapterHttpHandler(true)
 		handler.ServeHTTP(reply.GetResponseWriter(), request)
@@ -112,7 +125,7 @@ func (server *Server) RegisterHttpHandler(path string, method HttpMethod, handle
 	return server.Register(path, method, requestHandler)
 }
 
-func (server *Server) Register(path string, method HttpMethod, requestHandler RequestHandler) error {
+func (server *_Server) Register(path string, method HttpMethod, requestHandler RequestHandler) error {
 	err := server.router.matcher.regeditAction(path, method, requestHandler)
 	if err != nil {
 		logger.Error("注册 Handler 失败:%s", err)
@@ -120,19 +133,19 @@ func (server *Server) Register(path string, method HttpMethod, requestHandler Re
 	return err
 }
 
-func (server *Server) AddFirstFilter(uriPattern string, actionFilter Filter) {
+func (server *_Server) AddFirstFilter(uriPattern string, actionFilter Filter) {
 	server.router.addFirstFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
 }
 
-func (server *Server) AddLastFilter(uriPattern string, actionFilter Filter) {
+func (server *_Server) AddLastFilter(uriPattern string, actionFilter Filter) {
 	server.router.addLastFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
 }
 
-func (server *Server) AddFilterWithRegex(uriPattern string, actionFilter Filter) {
+func (server *_Server) AddFilterWithRegex(uriPattern string, actionFilter Filter) {
 	server.router.addLastFilter(newRegexUriPatternMatcher(uriPattern), actionFilter)
 }
 
-func (server *Server) AddRequestErrorHandler(code int, handler RequestErrorHandler) error {
+func (server *_Server) AddRequestErrorHandler(code int, handler RequestErrorHandler) error {
 	if _, ok := server.router.errorHandlers[code]; ok {
 		return errors.New(logger.Error("已经注册了[%d]异常响应码的处理方法,注册失败"))
 	}
