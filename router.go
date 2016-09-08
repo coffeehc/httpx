@@ -3,8 +3,6 @@ package web
 
 import (
 	"fmt"
-	"net/http"
-	"strings"
 
 	"github.com/coffeehc/logger"
 )
@@ -27,7 +25,7 @@ func newRouter() *router {
 	_router.errorHandlers = ErrorHandlers(make(map[int]RequestErrorHandler, 0))
 	_router.filter = &filterWarp{
 		matcher: newServletStyleUriPatternMatcher("/*"),
-		requestFilter: func(request *http.Request, reply Reply, chain FilterChain) {
+		requestFilter: func(reply Reply, chain FilterChain) {
 			defer func() {
 				if err := recover(); err != nil {
 					var httpErr *HttpError
@@ -37,13 +35,13 @@ func newRouter() *router {
 					}
 					defer reply.SetStatusCode(httpErr.Code)
 					if handler, ok := _router.errorHandlers[httpErr.Code]; ok {
-						handler(request, httpErr, reply)
+						handler(httpErr, reply)
 						return
 					}
-					reply.With(httpErr.Message).As(Transport_Json)
+					reply.With(httpErr.Message).As(Render_Json)
 				}
 			}()
-			chain(request, reply)
+			chain(reply)
 		},
 		filterChainFunc: _router.handle,
 	}
@@ -62,12 +60,14 @@ func (route *router) addLastFilter(matcher UriPatternMatcher, actionFilter Filte
 	route.filter.addNextFilter(newFilterWarp(matcher, actionFilter))
 }
 
-func (route *router) handle(request *http.Request, reply Reply) {
-	handler := route.matcher.getActionHandler(request.URL.Path, HttpMethod(strings.ToUpper(request.Method)))
+func (route *router) handle(reply Reply) {
+	path := reply.GetPath()
+	method := reply.GetHttpMethod()
+	handler := route.matcher.getActionHandler(path, method)
 	if handler == nil {
 		reply.SetStatusCode(404).With("404:you are lost")
-		logger.Error("Not found Handler for[%s] [%s]", strings.ToUpper(request.Method), request.URL.Path)
+		logger.Error("Not found Handler for[%s] [%s]", method, path)
 		return
 	}
-	handler.doAction(request, reply)
+	handler.doAction(reply)
 }

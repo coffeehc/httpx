@@ -3,7 +3,7 @@ package web
 import (
 	"time"
 
-	"github.com/unrolled/render"
+	"github.com/valyala/fasthttp"
 )
 
 type ServerOption struct {
@@ -23,7 +23,7 @@ type ServerOption struct {
 
 func (this *ServerOption) GetConcurrency() int {
 	if this.Concurrency < 10000 {
-		this.Concurrency = 100000
+		this.Concurrency = fasthttp.DefaultConcurrency //100000
 	}
 	return this.Concurrency
 }
@@ -92,30 +92,27 @@ func (this *ServerOption) GetReduceMemoryUsage() bool {
 }
 
 type HttpServerConfig struct {
-	Name         string `yaml:"name"`
-	serverOption *ServerOption
-	ServerAddr   string
-	//ConnState        func(net.Conn, http.ConnState)
-	//HttpErrorLogout  io.Writer
-	OpenTLS          bool
-	CertFile         string
-	KeyFile          string
-	DefaultTransport Transport
-	Render           *render.Render
+	Name          string `yaml:"name"`
+	ServerOption  *ServerOption
+	ServerAddr    string
+	OpenTLS       bool
+	CertFile      string
+	KeyFile       string
+	DefaultRender Render
 }
 
-func (this *HttpServerConfig) GetDefaultTransport() Transport {
-	if this.DefaultTransport == nil {
-		this.DefaultTransport = Transport_Text
+func (this *HttpServerConfig) GetServerOption() *ServerOption {
+	if this.ServerOption == nil {
+		this.ServerOption = &ServerOption{}
 	}
-	return this.DefaultTransport
+	return this.ServerOption
 }
 
-func (this *HttpServerConfig) GetRender() *render.Render {
-	if this.Render == nil {
-		this.Render = render.New()
+func (this *HttpServerConfig) GetDefaultRender() Render {
+	if this.DefaultRender == nil {
+		this.DefaultRender = Render_Text
 	}
-	return this.Render
+	return this.DefaultRender
 }
 
 func (this *HttpServerConfig) GetServerAddr() string {
@@ -127,7 +124,7 @@ func (this *HttpServerConfig) GetServerAddr() string {
 
 func (this *HttpServerConfig) GetName() string {
 	if this.Name == "" {
-		this.Name = "coffee"
+		this.Name = "coffee's httpServer"
 	}
 	return this.Name
 }

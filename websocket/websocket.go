@@ -5,6 +5,6 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func RegeditWebSocket(server web.Server, path string, service websocket.Handler) error {
+func RegeditWebSocket(server web._Server, path string, service websocket.Handler) error {
 	return server.RegisterHttpHandler(path, web.GET, service)
 }

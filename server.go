@@ -4,12 +4,13 @@ package web
 import (
 	"net"
 	"net/http"
-	"strings"
 
 	"fmt"
 
 	"errors"
+
 	"github.com/coffeehc/logger"
+	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/valyala/fasthttp"
 )
 
@@ -44,7 +45,7 @@ func (this *_Server) Start() error {
 	logger.Debug("serverConfig is %#v", this.config)
 	this.router.matcher.sort()
 	conf := this.config
-	option := this.config.serverOption
+	option := this.config.GetServerOption()
 	server := &fasthttp.Server{
 		Handler:                       this.httpHandler,
 		Name:                          conf.GetName(),
@@ -84,14 +85,9 @@ func (this *_Server) GetServerAddress() string {
 }
 
 func (this *_Server) httpHandler(ctx *fasthttp.RequestCtx) {
-	//TODO  没有实现啊!!!!
-	logger.Error("没有实现啊")
-}
-
-func (this *_Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
-	request.ParseForm()
-	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
-	reply := newHttpReply(responseWriter, this.config)
+	//TODO 考虑 context 使用 timeoutContext
+	reply := newReply(ctx, context.TODO(), this.config.GetDefaultRender())
+	ctx.Response.SetStatusCode(200)
 	defer func() {
 		if err := recover(); err != nil {
 			var httpErr *HttpError
@@ -101,15 +97,18 @@ func (this *_Server) serverHttpHandler(responseWriter http.ResponseWriter, reque
 			}
 			defer reply.SetStatusCode(httpErr.Code)
 			if handler, ok := this.router.errorHandlers[httpErr.Code]; ok {
-				handler(request, httpErr, reply)
+				handler(httpErr, reply)
 				return
 			}
-			reply.With(httpErr.Message).As(Transport_Json)
+			reply.With(httpErr.Message).As(Render_Json)
 		}
-		reply.finishReply(request, this.config.GetRender())
+		err := reply.FinishReply()
+		if err != nil {
+			ctx.Response.SetStatusCode(500)
+			ctx.Response.SetBodyString(err.Error())
+		}
 	}()
-	this.router.filter.doFilter(request, reply)
-
+	this.router.filter.doFilter(reply)
 }
 
 func (server *_Server) RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error {
@@ -118,11 +117,13 @@ func (server *_Server) RegisterHttpHandlerFunc(path string, method HttpMethod, h
 
 //适配 Http原生的 Handler 接口
 func (server *_Server) RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error {
-	requestHandler := func(request *http.Request, pathFragments map[string]string, reply Reply) {
-		reply.AdapterHttpHandler(true)
-		handler.ServeHTTP(reply.GetResponseWriter(), request)
-	}
-	return server.Register(path, method, requestHandler)
+	//requestHandler := func(request *http.Request, pathFragments map[string]string, reply Reply) {
+	//	reply.AdapterHttpHandler(true)
+	//	handler.ServeHTTP(reply.GetResponseWriter(), request)
+	//}
+	//return server.Register(path, method, requestHandler)
+	//TODO 未完成
+	return nil
 }
 
 func (server *_Server) Register(path string, method HttpMethod, requestHandler RequestHandler) error {

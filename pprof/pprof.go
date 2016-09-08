@@ -7,7 +7,7 @@ import (
 	"github.com/coffeehc/web"
 )
 
-func RegeditPprof(server *web.Server) {
+func RegeditPprof(server web.HttpServer) {
 	server.RegisterHttpHandlerFunc("/debug/pprof/{name}", web.GET, pprof.Index)
 	server.RegisterHttpHandlerFunc("/debug/pprof/{name}", web.POST, pprof.Index)
 	server.RegisterHttpHandlerFunc("/debug/pprof/cmdline", web.GET, pprof.Cmdline)
