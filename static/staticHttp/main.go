@@ -27,7 +27,7 @@ func main() {
 		flag.Set("path", _path)
 	}
 	logger.Info("static dir is %s", *path)
-	config := &web.ServerConfig{
+	config := &web.HttpServerConfig{
 		ServerAddr:     net.JoinHostPort(*addr, *port),
 		ReadTimeout:    time.Minute * 5,
 		WriteTimeout:   time.Minute * 5,

@@ -2,7 +2,6 @@ package web
 
 import (
 	"fmt"
-	"net/http"
 )
 
 type HttpError struct {
@@ -28,4 +27,4 @@ func HTTPERR_400(message string) *HttpError {
 
 type ErrorHandlers map[int]RequestErrorHandler
 
-type RequestErrorHandler func(request *http.Request, err *HttpError, reply Reply)
+type RequestErrorHandler func(err *HttpError, reply Reply)

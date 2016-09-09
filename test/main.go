@@ -1,28 +1,29 @@
 // main
-package web_test
+package main
 
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
-	"time"
 
-	"os"
-
+	"bytes"
 	"github.com/coffeehc/logger"
 	"github.com/coffeehc/utils"
 	"github.com/coffeehc/web"
 	"github.com/coffeehc/web/pprof"
+	"time"
 )
 
-func ExampleMain() {
+func main() {
 	logger.InitLogger()
-	config := &web.ServerConfig{
-		OpenTLS:         true,
-		CertFile:        "server.crt",
-		KeyFile:         "server.key",
-		HttpErrorLogout: os.Stderr,
+	config := &web.HttpServerConfig{
+		OpenTLS:  false,
+		CertFile: "server.crt",
+		KeyFile:  "server.key",
+		ServerOption: &web.ServerOption{
+			WriteBufferSize: 32,
+			WriteTimeout:    3,
+		},
 	}
 	server := web.NewServer(config)
 	pprof.RegeditPprof(server)
@@ -41,55 +42,59 @@ type Test struct {
 	Sex  int
 }
 
-func getStruct(r *http.Request, param map[string]string, reply web.Reply) {
+func getStruct(reply web.Reply) {
 	test := &Test{
 		Name: "coffee",
 		Age:  1,
 		Sex:  0,
 	}
-	responseType := r.FormValue("type")
-	if responseType == "xml" {
-		reply.With(test).As(web.Transport_Xml)
+	responseType := reply.GetPostParam("type")
+	if responseType.AsString() == "xml" {
+		reply.With(test).As(web.Render_Text)
 		return
 	}
-	reply.With(test).As(web.Transport_Json)
+	reply.With(test).As(web.Render_Json)
 }
 
-func reqInfoHandler(r *http.Request, param map[string]string, reply web.Reply) {
-	stream := reply.GetResponseWriter()
-	fmt.Fprintf(stream, "Method: %s\n", r.Method)
-	fmt.Fprintf(stream, "Protocol: %s\n", r.Proto)
-	fmt.Fprintf(stream, "Host: %s\n", r.Host)
-	fmt.Fprintf(stream, "RemoteAddr: %s\n", r.RemoteAddr)
-	fmt.Fprintf(stream, "RequestURI: %q\n", r.RequestURI)
-	fmt.Fprintf(stream, "URL: %#v\n", r.URL)
-	fmt.Fprintf(stream, "Body.ContentLength: %d (-1 means unknown)\n", r.ContentLength)
-	fmt.Fprintf(stream, "Close: %v (relevant for HTTP/1 only)\n", r.Close)
-	fmt.Fprintf(stream, "TLS: %#v\n", r.TLS)
-	fmt.Fprintf(stream, "\nHeaders:\n")
-	r.Header.Write(stream)
+func reqInfoHandler(reply web.Reply) {
+	buf := bytes.NewBuffer(nil)
+	cxt := reply.GetRequestContext()
+	fmt.Fprintf(buf, "Method: %s\n", reply.GetHttpMethod())
+	fmt.Fprintf(buf, "Protocol http1.1: %t\n", cxt.Request.Header.IsHTTP11())
+	fmt.Fprintf(buf, "Host: %s\n", cxt.Host())
+	fmt.Fprintf(buf, "RemoteAddr: %s\n", cxt.RemoteAddr())
+	fmt.Fprintf(buf, "RequestURI: %s\n", cxt.RequestURI())
+	fmt.Fprintf(buf, "URL: %#v\n", cxt.Request.URI())
+	fmt.Fprintf(buf, "Body.ContentLength: %d (-1 means unknown)\n", cxt.Request.Header.ContentLength())
+	//fmt.Fprintf(buf, "Close: %v (relevant for HTTP/1 only)\n", r.Close)
+	//fmt.Fprintf(buf, "TLS: %#v\n", r.TLS)
+	fmt.Fprintf(buf, "\nHeaders:\n")
+	reply.With(buf.Bytes())
 }
 
-func Service(request *http.Request, param map[string]string, reply web.Reply) {
-	reply.With("123" + param["name"])
+func Service(reply web.Reply) {
+	logger.Debug("StatusCode is [%d]", reply.GetStatusCode())
+	pathFragment := reply.GetPathFragment()
+	reply.With("123" + pathFragment["name"].AsString())
 	panic("123")
 }
 
-func TestService(request *http.Request, param map[string]string, reply web.Reply) {
-	stream := reply.GetResponseWriter()
-	clientGone := stream.(http.CloseNotifier).CloseNotify()
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	fmt.Fprintf(stream, "# ~1KB of junk to force browsers to start rendering immediately: \n")
-	io.WriteString(stream, strings.Repeat("# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n", 13))
-	for {
-		fmt.Fprintf(stream, "%v\n", time.Now())
-		stream.(http.Flusher).Flush()
-		select {
-		case <-ticker.C:
-		case <-clientGone:
-			logger.Info("Client %v disconnected from the clock", request.RemoteAddr)
-			return
+func TestService(reply web.Reply) {
+	//stream := reply.GetResponseWriter()
+	pipeR, pipeW := io.Pipe()
+	go func() {
+		fmt.Fprintf(pipeW, "# ~1KB of junk to force browsers to start rendering immediately: \n")
+		io.WriteString(pipeW, strings.Repeat("# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n", 13))
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		remoteAddr := reply.GetRemoteAddr()
+		for t := range ticker.C {
+			_, err := fmt.Fprintf(pipeW, "%v\n", t)
+			if err != nil {
+				logger.Info("Client %v disconnected from the clock,error is %s", remoteAddr, err)
+				return
+			}
 		}
-	}
+	}()
+	reply.With(pipeR)
 }

@@ -24,7 +24,7 @@ func (this *handlerMatcher) regeditAction(path string, method HttpMethod, reques
 	}
 	for _, handler := range actionHandlers {
 		if handler.exp.String() == newActionHandler.exp.String() {
-			return errors.New(logger.Error("定义的uri[%s]与[%s]产生冲突,不能添加", handler.defineUri, newActionHandler.defineUri))
+			return errors.New(logger.Error("定义的uri[%s]与[%s]产生冲突,不能添加", handler.definePath, newActionHandler.definePath))
 		}
 	}
 	this.requestHandlerMap[method] = append(actionHandlers, newActionHandler)
