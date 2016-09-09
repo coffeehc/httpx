@@ -83,7 +83,7 @@ func (this *fastReply) GetContext() context.Context {
 }
 
 func (this *fastReply) FinishReply() error {
-	return this.render.Render(&(this.ctx.Response), this.data)
+	return this.render(&(this.ctx.Response), this.data)
 }
 
 func (this *fastReply) GetRequestContext() *fasthttp.RequestCtx {

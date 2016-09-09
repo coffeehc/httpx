@@ -12,9 +12,9 @@ import (
 var (
 	DefaultCharset = "utf-8"
 
-	Render_Json = &render_Json{Charset: DefaultCharset}.Render
-	Render_Xml  = &render_Xml{Charset: DefaultCharset}.Render
-	Render_Text = &render_Text{Charset: DefaultCharset}.Render
+	Render_Json = render_Json{Charset: DefaultCharset}.Render
+	Render_Xml  = render_Xml{Charset: DefaultCharset}.Render
+	Render_Text = render_Text{Charset: DefaultCharset}.Render
 )
 
 func render(response *fasthttp.Response, data interface{}) error {
