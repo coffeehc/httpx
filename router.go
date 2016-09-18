@@ -33,7 +33,7 @@ func newRouter() *router {
 					if httpErr, ok = err.(*HttpError); !ok {
 						httpErr = HTTPERR_500(fmt.Sprintf("%#s", err))
 					}
-					defer reply.SetStatusCode(httpErr.Code)
+					reply.SetStatusCode(httpErr.Code)
 					if handler, ok := _router.errorHandlers[httpErr.Code]; ok {
 						handler(httpErr, reply)
 						return

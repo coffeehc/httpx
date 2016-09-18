@@ -6,5 +6,5 @@ type httpLogger struct {
 }
 
 func (this httpLogger) Printf(format string, args ...interface{}) {
-	logger.Printf(logger.LOGGER_LEVEL_DEBUG, logger.LOGGER_CODE_DEPTH+1, format, args)
+	logger.Printf(logger.LOGGER_LEVEL_ERROR, logger.LOGGER_CODE_DEPTH+1, format, args)
 }

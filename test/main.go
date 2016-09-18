@@ -25,7 +25,7 @@ func main() {
 			WriteTimeout:    3,
 		},
 	}
-	server := web.NewServer(config)
+	server := web.NewHttpServer(config)
 	pprof.RegeditPprof(server)
 	server.Register("/test", web.GET, TestService)
 	server.Register("/reqinfo", web.GET, reqInfoHandler)

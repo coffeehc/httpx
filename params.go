@@ -2,6 +2,7 @@ package web
 
 import (
 	"strconv"
+	"time"
 )
 
 type RequestParam string
@@ -32,6 +33,11 @@ func (this RequestParam) AsFloat64() float64 {
 
 func (this RequestParam) AsString() string {
 	return string(this)
+}
+
+func (this RequestParam) AsTime(layout string) time.Time {
+	t, _ := time.Parse(layout, this.AsString())
+	return t
 }
 
 type PathFragment map[string]RequestParam

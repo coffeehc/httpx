@@ -2,6 +2,7 @@ package web
 
 import (
 	"errors"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -11,30 +12,29 @@ import (
 type RequestHandler func(reply Reply)
 
 type requestHandler struct {
-	method           HttpMethod
-	definePath       string
-	hasPathFragments bool
-	uriConversions   map[string]int
-	pathSize         int
-	requestHandler   RequestHandler
-	exp              *regexp.Regexp
+	method            HttpMethod
+	defineUri         string
+	hasPathFragments  bool
+	uriConversions    map[string]int
+	pathSize          int
+	requestHandleFunc RequestHandler
+	exp               *regexp.Regexp
 	//用于排序后提高 request 命中率
 	//accessCount int64
 }
 
-func (this *requestHandler) doAction(reply Reply) {
-	path := reply.GetPath()
+func (this *requestHandler) doAction(request *http.Request, reply Reply) {
+	requestUri := request.URL.Path
 	if this.hasPathFragments {
-		paths := strings.Split(path, PATH_SEPARATOR)
+		paths := strings.Split(requestUri, PATH_SEPARATOR)
 		if this.pathSize != len(paths) {
-			panic(errors.New(logger.Error("需要解析的uri[%s]不匹配定义的uri[%s]", path, this.definePath)))
+			panic(errors.New(logger.Error("需要解析的uri[%s]不匹配定义的uri[%s]", requestUri, this.defineUri)))
 		}
 		for name, index := range this.uriConversions {
-			reply.PutPathFragment(name, paths[index])
+			reply.AddPathFragment(name, paths[index])
 		}
-
 	}
-	this.requestHandler(reply)
+	this.requestHandleFunc(reply)
 }
 
 //用于匹配是否
@@ -42,7 +42,7 @@ func (this *requestHandler) match(uri string) bool {
 	if this.hasPathFragments {
 		return this.exp.MatchString(uri)
 	}
-	return this.definePath == uri
+	return this.defineUri == uri
 }
 
 func buildRequestHandler(path string, method HttpMethod, requestHandlerFunc RequestHandler) (*requestHandler, error) {
@@ -76,13 +76,13 @@ func buildRequestHandler(path string, method HttpMethod, requestHandlerFunc Requ
 		return nil, err
 	}
 	return &requestHandler{
-		exp:              exp,
-		method:           method,
-		definePath:       path,
-		hasPathFragments: len(uriConversions) > 0,
-		uriConversions:   uriConversions,
-		pathSize:         pathSize,
-		requestHandler:   requestHandlerFunc,
+		exp:               exp,
+		method:            method,
+		defineUri:         path,
+		hasPathFragments:  len(uriConversions) > 0,
+		uriConversions:    uriConversions,
+		pathSize:          pathSize,
+		requestHandleFunc: requestHandlerFunc,
 	}, nil
 }
 

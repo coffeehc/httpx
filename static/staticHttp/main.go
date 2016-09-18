@@ -33,7 +33,7 @@ func main() {
 		WriteTimeout:   time.Minute * 5,
 		MaxHeaderBytes: 100000,
 	}
-	server := web.NewServer(config)
+	server := web.NewHttpServer(config)
 	static.RegisterStaticFilter(server, "/*", *path)
 	server.AddFirstFilter("/*", web.SimpleAccessLogFilter)
 	server.Start()
