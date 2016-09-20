@@ -33,7 +33,8 @@ func (this *filterWarp) addNextFilter(filter *filterWarp) {
 }
 
 func (this *filterWarp) doFilter(reply Reply) {
-	if this.matcher.match(reply.GetPath()) {
+	path := reply.GetRequest().URL.Path
+	if this.matcher.match(path) {
 		this.requestFilter(reply, this.filterChain)
 		return
 	}
@@ -60,5 +61,6 @@ func SimpleAccessLogFilter(reply Reply, chain FilterChain) {
 }
 
 func printAccessLog(startTime time.Time, reply Reply) {
-	logger.Info("%s\t%s\t%s\t%d", time.Since(startTime), reply.GetRemoteAddr().String(), reply.GetFullURL(), reply.GetStatusCode())
+	request := reply.GetRequest()
+	logger.Info("%s\t%s\t%s\t%d", time.Since(startTime), request.RemoteAddr, request.URL.RequestURI(), reply.GetStatusCode())
 }

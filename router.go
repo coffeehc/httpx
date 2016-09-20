@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/coffeehc/logger"
+	"strings"
 )
 
 const (
@@ -61,8 +62,9 @@ func (route *router) addLastFilter(matcher UriPatternMatcher, actionFilter Filte
 }
 
 func (route *router) handle(reply Reply) {
-	path := reply.GetPath()
-	method := reply.GetHttpMethod()
+	request := reply.GetRequest()
+	path := request.RequestURI
+	method := HttpMethod(strings.ToUpper(request.Method))
 	handler := route.matcher.getActionHandler(path, method)
 	if handler == nil {
 		reply.SetStatusCode(404).With("404:you are lost")

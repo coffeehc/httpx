@@ -95,14 +95,14 @@ func (this *_Server) serverHttpHandler(responseWriter http.ResponseWriter, reque
 			}
 			reply.SetStatusCode(httpErr.Code)
 			if handler, ok := this.router.errorHandlers[httpErr.Code]; ok {
-				handler(request, httpErr, reply)
+				handler(httpErr, reply)
 				return
 			}
 			reply.With(httpErr.Message).As(Default_Render_Json)
 		}
 		reply.finishReply()
 	}()
-	this.router.filter.doFilter(request, reply)
+	this.router.filter.doFilter(reply)
 
 }
 

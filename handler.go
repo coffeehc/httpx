@@ -2,7 +2,6 @@ package web
 
 import (
 	"errors"
-	"net/http"
 	"regexp"
 	"strings"
 
@@ -23,8 +22,8 @@ type requestHandler struct {
 	//accessCount int64
 }
 
-func (this *requestHandler) doAction(request *http.Request, reply Reply) {
-	requestUri := request.URL.Path
+func (this *requestHandler) doAction(reply Reply) {
+	requestUri := reply.GetRequest().RequestURI
 	if this.hasPathFragments {
 		paths := strings.Split(requestUri, PATH_SEPARATOR)
 		if this.pathSize != len(paths) {

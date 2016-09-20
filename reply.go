@@ -27,7 +27,6 @@ type Reply interface {
 	GetResponseWriter() http.ResponseWriter
 	GetPathFragment() PathFragment
 	AdapterHttpHandler(adapter bool)
-	GetRequestContext() RequestContext
 }
 
 type httpReply struct {
@@ -39,7 +38,6 @@ type httpReply struct {
 	request            *http.Request
 	responseWriter     http.ResponseWriter
 	adapterHttpHandler bool
-	requestContext     RequestContext
 	pathFragment       PathFragment
 }
 
@@ -52,13 +50,6 @@ func newHttpReply(request *http.Request, w http.ResponseWriter, config *ServerCo
 		responseWriter: w,
 		header:         w.Header(),
 	}
-}
-
-func (this *httpReply) GetRequestContext() RequestContext {
-	if this.requestContext == nil {
-		this.requestContext = make(RequestContext)
-	}
-	return this.requestContext
 }
 
 func (this *httpReply) AdapterHttpHandler(adapter bool) {
