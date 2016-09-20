@@ -54,7 +54,9 @@ func (this *_Server) Start() <-chan error {
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
 	}
-	server.SetKeepAlivesEnabled(true)
+	if !conf.getDisabledKeepAlive() {
+		server.SetKeepAlivesEnabled(true)
+	}
 	if conf.HttpErrorLogout != nil {
 		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
 	}
