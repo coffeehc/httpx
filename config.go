@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type ServerConfig struct {
+type HttpServerConfig struct {
 	ServerAddr        string
 	ReadTimeout       time.Duration // 读的最大Timeout时间
 	WriteTimeout      time.Duration // 写的最大Timeout时间
@@ -24,39 +24,39 @@ type ServerConfig struct {
 	DisabledKeepAlive bool
 }
 
-func (this *ServerConfig) getDisabledKeepAlive() bool {
+func (this *HttpServerConfig) getDisabledKeepAlive() bool {
 	return this.DisabledKeepAlive
 }
 
-func (this *ServerConfig) getDefaultRender() Render {
+func (this *HttpServerConfig) getDefaultRender() Render {
 	if this.DefaultRender == nil {
 		this.DefaultRender = Default_Render_Text
 	}
 	return this.DefaultRender
 }
 
-func (this *ServerConfig) getServerAddr() string {
+func (this *HttpServerConfig) getServerAddr() string {
 	if this.ServerAddr == "" {
 		this.ServerAddr = "0.0.0.0:8888"
 	}
 	return this.ServerAddr
 }
 
-func (this *ServerConfig) getReadTimeout() time.Duration {
+func (this *HttpServerConfig) getReadTimeout() time.Duration {
 	if this.ReadTimeout < 0 {
 		this.ReadTimeout = 0
 	}
 	return this.ReadTimeout
 }
 
-func (this *ServerConfig) getWriteTimeout() time.Duration {
+func (this *HttpServerConfig) getWriteTimeout() time.Duration {
 	if this.WriteTimeout < 0 {
 		this.WriteTimeout = 0
 	}
 	return this.WriteTimeout
 }
 
-func (this *ServerConfig) getMaxHeaderBytes() int {
+func (this *HttpServerConfig) getMaxHeaderBytes() int {
 	if this.MaxHeaderBytes < 0 {
 		this.MaxHeaderBytes = 0
 	}

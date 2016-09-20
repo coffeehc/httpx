@@ -41,7 +41,7 @@ type httpReply struct {
 	pathFragment       PathFragment
 }
 
-func newHttpReply(request *http.Request, w http.ResponseWriter, config *ServerConfig) *httpReply {
+func newHttpReply(request *http.Request, w http.ResponseWriter, config *HttpServerConfig) *httpReply {
 	return &httpReply{
 		statusCode:     200,
 		render:         config.getDefaultRender(),

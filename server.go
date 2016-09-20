@@ -30,13 +30,13 @@ type _Server struct {
 	httpServer *http.Server
 	router     *router
 	listener   net.Listener
-	config     *ServerConfig
+	config     *HttpServerConfig
 }
 
 //创建一个Server,参数可以为空,默认使用0.0.0.0:8888
-func NewHttpServer(serverConfig *ServerConfig) HttpServer {
+func NewHttpServer(serverConfig *HttpServerConfig) HttpServer {
 	if serverConfig == nil {
-		serverConfig = new(ServerConfig)
+		serverConfig = new(HttpServerConfig)
 	}
 	return &_Server{router: newRouter(), config: serverConfig}
 }
