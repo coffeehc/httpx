@@ -12,12 +12,27 @@ import (
 var (
 	DefaultCharset = "utf-8"
 
-	Render_Json = render_Json{Charset: DefaultCharset}.Render
-	Render_Xml  = render_Xml{Charset: DefaultCharset}.Render
-	Render_Text = render_Text{Charset: DefaultCharset}.Render
+	Default_Render_Json = Render_Json{Charset: DefaultCharset}
+	Default_Render_Xml  = Render_Xml{Charset: DefaultCharset}
+	Default_Render_Text = Render_Text{Charset: DefaultCharset}
 )
 
-func render(w io.Writer, data interface{}) error {
+type Render interface {
+	ContentType() string
+	Write(w http.ResponseWriter, data interface{}) error
+}
+
+func renderReply(w http.ResponseWriter, render Render, data interface{}) error {
+	contentType := render.ContentType()
+	if contentType == "" {
+		contentType = "text/plain"
+	}
+	w.Header().Set("content-type", contentType)
+	return render.Write(w, data)
+
+}
+
+func writeBody(w io.Writer, data interface{}) error {
 	var err error = nil
 	switch v := data.(type) {
 	case string:
@@ -39,39 +54,47 @@ func render(w io.Writer, data interface{}) error {
 	return err
 }
 
-type Render func(w http.ResponseWriter, data interface{}) error
-
-type render_Json struct {
+type Render_Json struct {
 	Charset string
 }
 
-func (this render_Json) Render(w http.ResponseWriter, data interface{}) error {
-	w.Header().Set("content-type", "application/json; charset="+this.Charset)
+func (this Render_Json) ContentType() string {
+	return "application/json; charset=" + this.Charset
+}
+
+func (this Render_Json) Write(w http.ResponseWriter, data interface{}) error {
 	v, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	return render(w, v)
+	return writeBody(w, v)
 }
 
-type render_Text struct {
+type Render_Text struct {
 	Charset string
 }
 
-func (this render_Text) Render(w http.ResponseWriter, data interface{}) error {
-	w.Header().Set("content-type", "text/plain; charset="+this.Charset)
-	return render(w, data)
+func (this Render_Text) ContentType() string {
+	return "text/plain; charset=" + this.Charset
 }
 
-type render_Xml struct {
+func (this Render_Text) Write(w http.ResponseWriter, data interface{}) error {
+	return writeBody(w, data)
+}
+
+type Render_Xml struct {
 	Charset string
 }
 
-func (this render_Xml) Render(w http.ResponseWriter, data interface{}) error {
+func (this Render_Xml) ContentType() string {
+	return "text/plain; charset=" + this.Charset
+}
+
+func (this Render_Xml) Write(w http.ResponseWriter, data interface{}) error {
 	w.Header().Set("content-type", "application/xml; charset="+this.Charset)
 	v, err := xml.Marshal(data)
 	if err != nil {
 		return err
 	}
-	return render(w, v)
+	return writeBody(w, v)
 }

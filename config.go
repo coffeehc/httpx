@@ -25,7 +25,7 @@ type ServerConfig struct {
 
 func (this *ServerConfig) getDefaultRender() Render {
 	if this.DefaultRender == nil {
-		this.DefaultRender = Render_Text
+		this.DefaultRender = Default_Render_Text
 	}
 	return this.DefaultRender
 }

@@ -18,7 +18,7 @@ func NewProxy(scheme, host string) *Proxy {
 	return &Proxy{host, scheme, new(http.Client)}
 }
 
-func (this *Proxy) DoProxy(request *http.Request, reply *web.Reply, chain web.FilterChain) {
+func (this *Proxy) DoProxy(request *http.Request, reply web.Reply, chain web.FilterChain) {
 	request.URL.Scheme = this.scheme
 	request.URL.Host = this.host
 	request.Host = this.host

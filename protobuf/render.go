@@ -8,11 +8,17 @@ import (
 )
 
 var (
-	Render_PB web.Render = render_pb
+	Default_Render_PB web.Render = Render_protobuf{}
 )
 
-func render_pb(w http.ResponseWriter, data interface{}) error {
-	w.Header().Set("content-type", "application/x-protobuf")
+type Render_protobuf struct {
+}
+
+func (this Render_protobuf) ContentType() string {
+	return "application/x-protobuf"
+}
+
+func (this Render_protobuf) Write(w http.ResponseWriter, data interface{}) error {
 	if message, ok := data.(proto.Message); ok {
 		data, err := proto.Marshal(message)
 		if err != nil {

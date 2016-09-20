@@ -146,11 +146,11 @@ func (this *httpReply) finishReply() {
 	if this.data == nil {
 		this.data = ""
 	}
-	err := this.render(this.GetResponseWriter(), this.data)
+	err := renderReply(this.GetResponseWriter(), this.render, this.data)
 	if err != nil {
 		this.SetStatusCode(500)
 		logger.Error("render error %#v", err)
-		Render_Text(this.GetResponseWriter(), fmt.Sprintf("render error :%s", err))
+		renderReply(this.GetResponseWriter(), Default_Render_Text, fmt.Sprintf("render error :%s", err))
 	}
 }
 

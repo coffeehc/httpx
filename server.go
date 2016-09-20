@@ -13,7 +13,7 @@ import (
 )
 
 type HttpServer interface {
-	Start() error
+	Start() <-chan error
 	GetServerAddress() string
 	RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error
 	RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error
@@ -41,7 +41,7 @@ func NewHttpServer(serverConfig *ServerConfig) HttpServer {
 	return &_Server{router: newRouter(), config: serverConfig}
 }
 
-func (this *_Server) Start() error {
+func (this *_Server) Start() <-chan error {
 	logger.Debug("serverConfig is %#v", this.config)
 	this.router.matcher.sort()
 	conf := this.config
@@ -60,18 +60,20 @@ func (this *_Server) Start() error {
 	}
 	this.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
+	errorSign := make(chan error)
 	if conf.OpenTLS {
 		go func() {
 			err := server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
-			logger.Error("启动 HttpServer 失败:%s", err)
+			errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
+
 		}()
 	} else {
 		go func() {
 			err := server.ListenAndServe()
-			logger.Error("启动 HttpServer 失败:%s", err)
+			errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
 		}()
 	}
-	return nil
+	return errorSign
 }
 
 func (this *_Server) GetServerAddress() string {
@@ -94,7 +96,7 @@ func (this *_Server) serverHttpHandler(responseWriter http.ResponseWriter, reque
 				handler(request, httpErr, reply)
 				return
 			}
-			reply.With(httpErr.Message).As(Render_Json)
+			reply.With(httpErr.Message).As(Default_Render_Json)
 		}
 		reply.finishReply()
 	}()

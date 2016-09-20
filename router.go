@@ -38,7 +38,7 @@ func newRouter() *router {
 						handler(httpErr, reply)
 						return
 					}
-					reply.With(httpErr.Message).As(Render_Json)
+					reply.With(httpErr.Message).As(Default_Render_Json)
 				}
 			}()
 			chain(reply)
