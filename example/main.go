@@ -1,5 +1,5 @@
 // main
-package main
+package web_text
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 	"github.com/coffeehc/web/pprof"
 )
 
-func main() {
+func ExampleMain() {
 	logger.InitLogger()
 	config := &web.ServerConfig{
 		OpenTLS:         false,
