@@ -52,7 +52,6 @@ func (this *_Server) Start() <-chan error {
 		MaxHeaderBytes: conf.MaxHeaderBytes,
 		TLSConfig:      conf.TLSConfig,
 		TLSNextProto:   conf.TLSNextProto,
-		ConnState:      conf.ConnState,
 	}
 	if !conf.getDisabledKeepAlive() {
 		server.SetKeepAlivesEnabled(true)
@@ -63,7 +62,7 @@ func (this *_Server) Start() <-chan error {
 	this.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
 	errorSign := make(chan error)
-	if conf.OpenTLS {
+	if conf.EnabledTLS {
 		go func() {
 			err := server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
 			errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))

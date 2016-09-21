@@ -3,21 +3,20 @@ package web
 import (
 	"crypto/tls"
 	"io"
-	"net"
 	"net/http"
 	"time"
 )
 
 type HttpServerConfig struct {
-	ServerAddr        string
-	ReadTimeout       time.Duration // 读的最大Timeout时间
-	WriteTimeout      time.Duration // 写的最大Timeout时间
-	MaxHeaderBytes    int           // 请求头的最大长度
-	TLSConfig         *tls.Config   // 配置TLS
-	TLSNextProto      map[string]func(*http.Server, *tls.Conn, http.Handler)
-	ConnState         func(net.Conn, http.ConnState)
+	ServerAddr     string
+	ReadTimeout    time.Duration // 读的最大Timeout时间
+	WriteTimeout   time.Duration // 写的最大Timeout时间
+	MaxHeaderBytes int           // 请求头的最大长度
+	TLSConfig      *tls.Config   // 配置TLS
+	TLSNextProto   map[string]func(*http.Server, *tls.Conn, http.Handler)
+	//ConnState         func(net.Conn, http.ConnState)
 	HttpErrorLogout   io.Writer
-	OpenTLS           bool
+	EnabledTLS        bool
 	CertFile          string
 	KeyFile           string
 	DefaultRender     Render

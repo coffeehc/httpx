@@ -19,7 +19,7 @@ import (
 func main() {
 	logger.InitLogger()
 	config := &web.HttpServerConfig{
-		OpenTLS:         false,
+		EnabledTLS:      false,
 		CertFile:        "server.crt",
 		KeyFile:         "server.key",
 		HttpErrorLogout: os.Stderr,
