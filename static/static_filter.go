@@ -6,7 +6,7 @@ import (
 	"github.com/coffeehc/web"
 )
 
-func RegisterStaticFilter(server *web._Server, uriPattern string, staticDir string) http.Handler {
+func RegisterStaticFilter(server web.HttpServer, uriPattern string, staticDir string) http.Handler {
 	lastChar := uriPattern[len(uriPattern)-1]
 	if lastChar != '*' {
 		if lastChar != '/' {
@@ -15,9 +15,9 @@ func RegisterStaticFilter(server *web._Server, uriPattern string, staticDir stri
 		uriPattern = uriPattern + "*"
 	}
 	handler := http.StripPrefix(string(uriPattern[:len(uriPattern)-1]), http.FileServer(http.Dir(staticDir)))
-	server.AddLastFilter(uriPattern, func(request *http.Request, reply web.Reply, chain web.FilterChain) {
+	server.AddLastFilter(uriPattern, func(reply web.Reply, chain web.FilterChain) {
 		reply.AdapterHttpHandler(true)
-		handler.ServeHTTP(reply.GetResponseWriter(), request)
+		handler.ServeHTTP(reply.GetResponseWriter(), reply.GetRequest())
 	})
 	return handler
 }
