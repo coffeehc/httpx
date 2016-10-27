@@ -1,4 +1,4 @@
-package static
+package staticfilter
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"github.com/coffeehc/web"
 )
 
-func RegisterStaticFilter(server *web._Server, uriPattern string, staticDir string) http.Handler {
+func RegisterStaticFilter(server web.HttpServer, uriPattern string, staticDir string) http.Handler {
 	lastChar := uriPattern[len(uriPattern)-1]
 	if lastChar != '*' {
 		if lastChar != '/' {
