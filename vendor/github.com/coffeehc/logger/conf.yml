@@ -1,0 +1,18 @@
+context: Default
+appenders:
+ -
+  level: debug
+  package_path: /
+  adapter: console
+  timeformat: 2006-01-02 15:04:05
+  format: %T %L %C %M
+ -
+  level: error
+  package_path: /
+  adapter: file
+  log_path: /logs/box/box.log
+  rotate: 3
+  #备份策略：size or time  or default
+  rotate_policy: time
+  #备份范围：如果策略是time则表示时间间隔N分钟，如果是size则表示每个日志的最大大小(MB)
+  rotate_scope: 10
