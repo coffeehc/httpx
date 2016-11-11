@@ -27,6 +27,8 @@ type Reply interface {
 	GetResponseWriter() http.ResponseWriter
 	GetPathFragment() PathFragment
 	AdapterHttpHandler(adapter bool)
+	//包装一层ResponseWriter,如 Gzip
+	WarpResponseWriter(http.ResponseWriter)
 }
 
 type httpReply struct {
@@ -150,4 +152,8 @@ func (this *httpReply) writeWarpHeader() {
 	for _, cookie := range this.cookies {
 		header.Set("Set-Cookie", cookie.String())
 	}
+}
+
+func (this *httpReply) WarpResponseWriter(writwe http.ResponseWriter) {
+	this.responseWriter = writwe
 }

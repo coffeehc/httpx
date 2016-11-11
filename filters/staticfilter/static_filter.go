@@ -1,4 +1,4 @@
-package static
+package staticfilter
 
 import (
 	"net/http"
