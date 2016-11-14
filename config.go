@@ -46,14 +46,14 @@ func (this *HttpServerConfig) getReadTimeout() time.Duration {
 	if this.ReadTimeout < 0 {
 		this.ReadTimeout = 0
 	}
-	return this.ReadTimeout
+	return this.ReadTimeout * time.Second
 }
 
 func (this *HttpServerConfig) getWriteTimeout() time.Duration {
 	if this.WriteTimeout < 0 {
 		this.WriteTimeout = 0
 	}
-	return this.WriteTimeout
+	return this.WriteTimeout * time.Second
 }
 
 func (this *HttpServerConfig) getMaxHeaderBytes() int {
