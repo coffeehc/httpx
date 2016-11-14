@@ -70,13 +70,13 @@ func (this *_Server) Start() <-chan error {
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
 	errorSign := make(chan error, 1)
 	listener, err := net.Listen("tcp", conf.getServerAddr())
-	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
 	//TODO listen Option
 	if err != nil {
 		logger.Error("绑定监听地址[%s]失败", conf.getServerAddr())
 		errorSign <- err
 		return errorSign
 	}
+	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
 	if conf.EnabledTLS {
 		cer, err := tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
 		if err != nil {
