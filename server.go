@@ -62,9 +62,6 @@ func (this *_Server) Start() <-chan error {
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
 	}
-	if !conf.getDisabledKeepAlive() {
-		server.SetKeepAlivesEnabled(true)
-	}
 	if conf.HttpErrorLogout != nil {
 		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
 	}
@@ -72,6 +69,7 @@ func (this *_Server) Start() <-chan error {
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
 	errorSign := make(chan error, 1)
 	listen, err := net.Listen("tcp", conf.getServerAddr())
+	listen = tcpKeepAliveListener{TCPListener: listen.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
 	//TODO listen Option
 	if err != nil {
 		logger.Error("绑定监听地址[%s]失败", conf.getServerAddr())
@@ -91,7 +89,7 @@ func (this *_Server) Start() <-chan error {
 		} else {
 			server.TLSConfig.Certificates = []tls.Certificate{cer}
 		}
-		listen = tls.NewListener(tcpKeepAliveListener{listen.(*net.TCPListener)}, server.TLSConfig)
+		listen = tls.NewListener(listen, server.TLSConfig)
 	}
 	go func() {
 		err := server.Serve(listen)

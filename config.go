@@ -21,11 +21,14 @@ type HttpServerConfig struct {
 	CertFile          string
 	KeyFile           string
 	DefaultRender     Render
-	DisabledKeepAlive bool
+	KeepAliveDuration time.Duration
 }
 
-func (this *HttpServerConfig) getDisabledKeepAlive() bool {
-	return this.DisabledKeepAlive
+func (this *HttpServerConfig) getKeepAliveDuration() time.Duration {
+	if this.KeepAliveDuration == 0 {
+		this.KeepAliveDuration = 3 * time.Second
+	}
+	return this.KeepAliveDuration
 }
 
 func (this *HttpServerConfig) getDefaultRender() Render {

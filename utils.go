@@ -7,14 +7,15 @@ import (
 
 type tcpKeepAliveListener struct {
 	*net.TCPListener
+	keepAliveDuration time.Duration
 }
 
 func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc, err := ln.AcceptTCP()
 	if err != nil {
-		return
+		return nil, err
 	}
 	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(3 * time.Minute)
+	tc.SetKeepAlivePeriod(ln.keepAliveDuration)
 	return tc, nil
 }
