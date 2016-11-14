@@ -8,12 +8,14 @@ import (
 
 	"fmt"
 
+	"crypto/tls"
 	"errors"
 	"github.com/coffeehc/logger"
 )
 
 type HttpServer interface {
 	Start() <-chan error
+	Stop()
 	GetServerAddress() string
 	RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error
 	RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error
@@ -41,6 +43,12 @@ func NewHttpServer(serverConfig *HttpServerConfig) HttpServer {
 	return &_Server{router: newRouter(), config: serverConfig}
 }
 
+func (this *_Server) Stop() {
+	if this.listener != nil {
+		this.listener.Close()
+	}
+}
+
 func (this *_Server) Start() <-chan error {
 	logger.Debug("serverConfig is %#v", this.config)
 	this.router.matcher.sort()
@@ -52,6 +60,7 @@ func (this *_Server) Start() <-chan error {
 		MaxHeaderBytes: conf.MaxHeaderBytes,
 		TLSConfig:      conf.TLSConfig,
 		TLSNextProto:   conf.TLSNextProto,
+		ConnState:      conf.ConnState,
 	}
 	if !conf.getDisabledKeepAlive() {
 		server.SetKeepAlivesEnabled(true)
@@ -61,19 +70,33 @@ func (this *_Server) Start() <-chan error {
 	}
 	this.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
-	errorSign := make(chan error)
-	if conf.EnabledTLS {
-		go func() {
-			err := server.ListenAndServeTLS(conf.CertFile, conf.KeyFile)
-			errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
-
-		}()
-	} else {
-		go func() {
-			err := server.ListenAndServe()
-			errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
-		}()
+	errorSign := make(chan error, 1)
+	listen, err := net.Listen("tcp", conf.getServerAddr())
+	//TODO listen Option
+	if err != nil {
+		logger.Error("绑定监听地址[%s]失败", conf.getServerAddr())
+		errorSign <- err
+		return errorSign
 	}
+	if conf.EnabledTLS {
+		cer, err := tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
+		if err != nil {
+			logger.Error("加载 TSL 证书失败,%s", err)
+			errorSign <- err
+			return errorSign
+		}
+		if conf.TLSConfig == nil {
+			tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+			server.TLSConfig = tlsConfig
+		} else {
+			server.TLSConfig.Certificates = []tls.Certificate{cer}
+		}
+		listen = tls.NewListener(tcpKeepAliveListener{listen.(*net.TCPListener)}, server.TLSConfig)
+	}
+	go func() {
+		err := server.Serve(listen)
+		errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
+	}()
 	return errorSign
 }
 
