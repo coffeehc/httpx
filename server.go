@@ -45,6 +45,7 @@ func NewHttpServer(serverConfig *HttpServerConfig) HttpServer {
 
 func (this *_Server) Stop() {
 	if this.listener != nil {
+		logger.Info("http Listener Close")
 		this.listener.Close()
 	}
 }
@@ -68,8 +69,8 @@ func (this *_Server) Start() <-chan error {
 	this.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
 	errorSign := make(chan error, 1)
-	listen, err := net.Listen("tcp", conf.getServerAddr())
-	listen = tcpKeepAliveListener{TCPListener: listen.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
+	listener, err := net.Listen("tcp", conf.getServerAddr())
+	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
 	//TODO listen Option
 	if err != nil {
 		logger.Error("绑定监听地址[%s]失败", conf.getServerAddr())
@@ -89,10 +90,10 @@ func (this *_Server) Start() <-chan error {
 		} else {
 			server.TLSConfig.Certificates = []tls.Certificate{cer}
 		}
-		listen = tls.NewListener(listen, server.TLSConfig)
+		this.listener = tls.NewListener(this.listener, server.TLSConfig)
 	}
 	go func() {
-		err := server.Serve(listen)
+		err := server.Serve(this.listener)
 		errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
 	}()
 	return errorSign
