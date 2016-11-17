@@ -63,6 +63,9 @@ func (route *router) addLastFilter(matcher UriPatternMatcher, actionFilter Filte
 
 func (route *router) handle(reply Reply) {
 	request := reply.GetRequest()
+	request.ParseForm()
+	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
+	//TODO ???
 	path := request.RequestURI
 	method := HttpMethod(strings.ToUpper(request.Method))
 	handler := route.matcher.getActionHandler(path, method)

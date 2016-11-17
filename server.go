@@ -4,7 +4,6 @@ package web
 import (
 	"net"
 	"net/http"
-	"strings"
 
 	"fmt"
 
@@ -104,8 +103,6 @@ func (this *_Server) GetServerAddress() string {
 }
 
 func (this *_Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
-	request.ParseForm()
-	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
 	reply := newHttpReply(request, responseWriter, this.config)
 	defer func() {
 		if err := recover(); err != nil {
