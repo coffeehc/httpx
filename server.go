@@ -76,21 +76,11 @@ func (this *_Server) Start() <-chan error {
 		return errorSign
 	}
 	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
-	if conf.EnabledTLS {
-		cer, err := tls.LoadX509KeyPair(conf.CertFile, conf.KeyFile)
-		if err != nil {
-			logger.Error("加载 TSL 证书失败,%s", err)
-			errorSign <- err
-			return errorSign
-		}
-		if conf.TLSConfig == nil {
-			tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
-			server.TLSConfig = tlsConfig
-		} else {
-			server.TLSConfig.Certificates = []tls.Certificate{cer}
-		}
-		this.listener = tls.NewListener(this.listener, server.TLSConfig)
+	if conf.TLSConfig != nil {
+		server.TLSConfig = conf.TLSConfig
 	}
+	this.listener = tls.NewListener(this.listener, server.TLSConfig)
+
 	go func() {
 		err := server.Serve(this.listener)
 		errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))

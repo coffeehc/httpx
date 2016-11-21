@@ -35,10 +35,10 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "ReVouFzIpenxZjGm8UXgmd6WP8k=",
+          "checksumSHA1": "+mvdMY/dtSOahVJD5YVEBtF1Ia8=",
 			"path": "github.com/coffeehc/logger",
-			"revision": "2b16b7b871e94ffb9f6d4dc77a0bf9d66b15ba9f",
-			"revisionTime": "2016-09-20T03:16:53Z"
+          "revision": "e6bcb394bf7198ca03178558a9ac379a1b437f32",
+          "revisionTime": "2016-11-11T15:35:59Z"
 		},
 		{
 			"checksumSHA1": "pgLIYV7R89urnwwkfBh4FaG0KA0=",
@@ -47,7 +47,7 @@
 			"revisionTime": "2015-12-04T02:50:30Z"
 		},
 		{
-			"checksumSHA1": "kVJ5YScYaDWw6iotbpZwQJ6xCGM=",
+          "checksumSHA1": "oJGkod8y/3GTbKfazzQM+nQOPR0=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "0c1f6d65b5a189c2250d10e71a5506f06f9fa0a0",
 			"revisionTime": "2016-06-14T22:31:40Z"
@@ -56,8 +56,8 @@
 			"checksumSHA1": "SPMXWeoFQa5z0pLPmqpcFzyHqQQ=",
 			"origin": "github.com/coffeehc/logger/vendor/gopkg.in/yaml.v2",
 			"path": "gopkg.in/yaml.v2",
-			"revision": "2b16b7b871e94ffb9f6d4dc77a0bf9d66b15ba9f",
-			"revisionTime": "2016-09-20T03:16:53Z"
+          "revision": "e6bcb394bf7198ca03178558a9ac379a1b437f32",
+          "revisionTime": "2016-11-11T15:35:59Z"
 		},
 		{
 			"path": "handler.go",

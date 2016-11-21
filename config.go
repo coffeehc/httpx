@@ -17,9 +17,6 @@ type HttpServerConfig struct {
 	TLSNextProto      map[string]func(*http.Server, *tls.Conn, http.Handler)
 	ConnState         func(net.Conn, http.ConnState)
 	HttpErrorLogout   io.Writer
-	EnabledTLS        bool
-	CertFile          string
-	KeyFile           string
 	DefaultRender     Render
 	KeepAliveDuration time.Duration
 }

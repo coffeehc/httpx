@@ -48,7 +48,7 @@ const (
 )
 
 //通过flag来指定日志文件路径,没有指定则查找当前目录下./conf/log.yml
-var _loggerConf *string = flag.String("logger", getDefaultLog(), "日志文件路径")
+var _loggerConf *string = flag.String("logger_config", getDefaultLog(), "日志文件路径")
 var default_Config *LoggerConfig = &LoggerConfig{Context: "Default", Appenders: []LoggerAppender{{Level: LOGGER_DEFAULT_LEVEL, Package_path: "/", Adapter: "console"}}}
 
 //获取默认的日志配置文件,路径为程序当前目录下./conf/log.yml
