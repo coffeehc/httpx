@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/coffeehc/logger"
+	"os"
 )
 
 type HttpServer interface {
@@ -61,6 +62,7 @@ func (this *_Server) Start() <-chan error {
 		TLSConfig:      conf.TLSConfig,
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
+		ErrorLog:       logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_DEBUG, "", "", os.Stdout),
 	}
 	if conf.HttpErrorLogout != nil {
 		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
