@@ -80,9 +80,8 @@ func (this *_Server) Start() <-chan error {
 	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
 	if conf.TLSConfig != nil {
 		server.TLSConfig = conf.TLSConfig
+		this.listener = tls.NewListener(this.listener, server.TLSConfig)
 	}
-	this.listener = tls.NewListener(this.listener, server.TLSConfig)
-
 	go func() {
 		err := server.Serve(this.listener)
 		errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
