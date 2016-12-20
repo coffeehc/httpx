@@ -265,8 +265,8 @@ To create and play with a Test object:
 package proto
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/pquerna/ffjson/ffjson"
 	"log"
 	"reflect"
 	"sort"
@@ -425,7 +425,7 @@ func UnmarshalJSONEnum(m map[string]int32, data []byte, enumName string) (int32,
 	if data[0] == '"' {
 		// New style: enums are strings.
 		var repr string
-		if err := json.Unmarshal(data, &repr); err != nil {
+		if err := ffjson.Unmarshal(data, &repr); err != nil {
 			return -1, err
 		}
 		val, ok := m[repr]
@@ -436,7 +436,7 @@ func UnmarshalJSONEnum(m map[string]int32, data []byte, enumName string) (int32,
 	}
 	// Old style: enums are ints.
 	var val int32
-	if err := json.Unmarshal(data, &val); err != nil {
+	if err := ffjson.Unmarshal(data, &val); err != nil {
 		return 0, fmt.Errorf("cannot unmarshal %#q into enum %s", data, enumName)
 	}
 	return val, nil

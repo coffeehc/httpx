@@ -37,9 +37,9 @@ package proto
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/pquerna/ffjson/ffjson"
 	"reflect"
 	"sort"
 )
@@ -271,7 +271,7 @@ func MarshalMessageSetJSON(exts interface{}) ([]byte, error) {
 				return nil, err
 			}
 		}
-		d, err := json.Marshal(x)
+		d, err := ffjson.Marshal(x)
 		if err != nil {
 			return nil, err
 		}

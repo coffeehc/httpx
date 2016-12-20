@@ -1,11 +1,11 @@
 package web
 
 import (
-	"encoding/json"
 	"io"
 
 	"encoding/xml"
 	"github.com/coffeehc/logger"
+	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
 )
 
@@ -63,7 +63,7 @@ func (this Render_Json) ContentType() string {
 }
 
 func (this Render_Json) Write(w http.ResponseWriter, data interface{}) error {
-	v, err := json.Marshal(data)
+	v, err := ffjson.Marshal(data)
 	if err != nil {
 		return err
 	}
