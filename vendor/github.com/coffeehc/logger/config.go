@@ -32,24 +32,33 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//日志配置
-type LoggerConfig struct {
+//Config 日志配置
+type Config struct {
 	//配置上下文
 	Context string `yaml:"context"`
 	//指定的日志处理机
-	Appenders []LoggerAppender `yaml:"appenders"`
+	Appenders []*Appender `yaml:"appenders"`
 }
 
 const (
-	//适配定义,控制台方式
-	Adapter_Console = "console"
-	//适配定义,文件方式
-	Adapter_File = "file"
+	//AdapterConsole 适配定义,控制台方式
+	AdapterConsole = "console"
+	//AdapterFile 适配定义,文件方式
+	AdapterFile = "file"
 )
 
 //通过flag来指定日志文件路径,没有指定则查找当前目录下./conf/log.yml
-var _loggerConf *string = flag.String("logger_config", getDefaultLog(), "日志文件路径")
-var default_Config *LoggerConfig = &LoggerConfig{Context: "Default", Appenders: []LoggerAppender{{Level: LOGGER_DEFAULT_LEVEL, Package_path: "/", Adapter: "console"}}}
+var _loggerConf = flag.String("logger_config", getDefaultLog(), "日志文件路径")
+var defaultConfig = &Config{
+	Context: "Default",
+	Appenders: []*Appender{
+		&Appender{
+			Level:       LoggerDefaultLevel,
+			PackagePath: "/",
+			Adapter:     AdapterConsole,
+		},
+	},
+}
 
 //获取默认的日志配置文件,路径为程序当前目录下./conf/log.yml
 func getDefaultLog() string {
@@ -69,7 +78,7 @@ func loadLoggerConfig(loggerConf string) {
 	conf := parseConfile(loggerConf)
 	if conf == nil || len(conf.Appenders) == 0 {
 		//fmt.Println("没有指定配置文件,服务将使用默认配置")
-		conf = default_Config
+		conf = defaultConfig
 	}
 	for _, appender := range conf.Appenders {
 		AddAppender(appender)
@@ -78,7 +87,7 @@ func loadLoggerConfig(loggerConf string) {
 }
 
 //解析配置
-func parseConfile(loggerConf string) *LoggerConfig {
+func parseConfile(loggerConf string) *Config {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("解析配置文件%s出错:%s\n", loggerConf, r)
@@ -89,7 +98,7 @@ func parseConfile(loggerConf string) *LoggerConfig {
 	if err != nil {
 		//log.Printf("[警告]加载日志配置文件错误:%s\n", err)
 	} else {
-		conf := new(LoggerConfig)
+		conf := new(Config)
 		err = yaml.Unmarshal(data, conf)
 		if err != nil {
 			log.Printf("加载日志配置文件失败:%s\n", err)

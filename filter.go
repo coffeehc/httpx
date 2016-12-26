@@ -1,4 +1,3 @@
-// filter
 package web
 
 import (
@@ -7,49 +6,52 @@ import (
 	"github.com/coffeehc/logger"
 )
 
+//Filter 定义实现 Filter 需要实现的方法类型
 type Filter func(reply Reply, chain FilterChain)
 
+//FilterChain 定义的需要执行的方法子方法
 type FilterChain func(reply Reply)
 
 type filterWarp struct {
-	matcher         UriPatternMatcher
+	matcher         URIPatternMatcher
 	requestFilter   Filter
 	nextFilter      *filterWarp
 	filterChainFunc FilterChain
 }
 
-func newFilterWarp(matcher UriPatternMatcher, actionFilter Filter) *filterWarp {
+func newFilterWarp(matcher URIPatternMatcher, actionFilter Filter) *filterWarp {
 	return &filterWarp{matcher: matcher, requestFilter: actionFilter}
 }
 
-func (this *filterWarp) addNextFilter(filter *filterWarp) {
-	if this.nextFilter == nil {
-		filter.filterChainFunc = this.filterChainFunc
-		this.nextFilter = filter
-		this.filterChainFunc = nil
+func (warp *filterWarp) addNextFilter(filter *filterWarp) {
+	if warp.nextFilter == nil {
+		filter.filterChainFunc = warp.filterChainFunc
+		warp.nextFilter = filter
+		warp.filterChainFunc = nil
 		return
 	}
-	this.nextFilter.addNextFilter(filter)
+	warp.nextFilter.addNextFilter(filter)
 }
 
-func (this *filterWarp) doFilter(reply Reply) {
+func (warp *filterWarp) doFilter(reply Reply) {
 	path := reply.GetRequest().URL.Path
-	if this.matcher.match(path) {
-		this.requestFilter(reply, this.filterChain)
+	if warp.matcher.match(path) {
+		warp.requestFilter(reply, warp.filterChain)
 		return
 	}
-	this.filterChain(reply)
+	warp.filterChain(reply)
 }
 
-func (this *filterWarp) filterChain(reply Reply) {
-	if this.nextFilter == nil {
-		this.filterChainFunc(reply)
+func (warp *filterWarp) filterChain(reply Reply) {
+	if warp.nextFilter == nil {
+		warp.filterChainFunc(reply)
 		return
 	}
-	this.nextFilter.doFilter(reply)
+	warp.nextFilter.doFilter(reply)
 }
 
-func SimpleAccessLogFilter(reply Reply, chain FilterChain) {
+//AccessLogFilter 访问日志的 Filter, 在 consol 上输出每个被访问的 url 及响应时间
+func AccessLogFilter(reply Reply, chain FilterChain) {
 	t1 := time.Now()
 	defer func() {
 		printAccessLog(t1, reply)

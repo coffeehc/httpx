@@ -6,13 +6,14 @@ import (
 	"time"
 )
 
+//ConvertError 请求参数转换错误
 type ConvertError struct {
 	typeName string
 	msg      string
 }
 
-func (this ConvertError) Error() string {
-	return this.msg
+func (ce ConvertError) Error() string {
+	return ce.msg
 }
 
 func newConvertError(typeName string) *ConvertError {
@@ -23,128 +24,147 @@ func newConvertError(typeName string) *ConvertError {
 }
 
 var (
-	ERROR_CONVERT_INT     = newConvertError("int")
-	ERROR_CONVERT_INT32   = newConvertError("int32")
-	ERROR_CONVERT_INT64   = newConvertError("int64")
-	ERROR_CONVERT_FLOAT32 = newConvertError("float32")
-	ERROR_CONVERT_FLOAT64 = newConvertError("float64")
-	ERROR_CONVERT_TIME    = newConvertError("Time")
+	errorConvertInt     = newConvertError("int")
+	errorConvertInt32   = newConvertError("int32")
+	errorConvertInt64   = newConvertError("int64")
+	errorConvertFloat32 = newConvertError("float32")
+	errorConvertFloat64 = newConvertError("float64")
+	errorConvertTime    = newConvertError("Time")
 )
 
+//RequestParam 统一Request 请求参数类型
 type RequestParam string
 
-func (this RequestParam) AsInt() (int, error) {
-	i, err := strconv.Atoi(this.AsString())
+//AsInt 转换为 Int 类型
+func (rp RequestParam) AsInt() (int, error) {
+	i, err := strconv.Atoi(rp.AsString())
 	if err != nil {
-		return 0, ERROR_CONVERT_INT
+		return 0, errorConvertInt
 	}
 	return i, nil
 }
 
-func (this RequestParam) AsInt32() (int32, error) {
-	i, err := strconv.ParseInt(this.AsString(), 10, 32)
+//AsInt32 to int32
+func (rp RequestParam) AsInt32() (int32, error) {
+	i, err := strconv.ParseInt(rp.AsString(), 10, 32)
 	if err != nil {
-		return 0, ERROR_CONVERT_INT32
+		return 0, errorConvertInt32
 	}
 	return int32(i), nil
 }
 
-func (this RequestParam) AsInt64() (int64, error) {
-	i, err := strconv.ParseInt(this.AsString(), 10, 64)
+//AsInt64 to int64
+func (rp RequestParam) AsInt64() (int64, error) {
+	i, err := strconv.ParseInt(rp.AsString(), 10, 64)
 	if err != nil {
-		return 0, ERROR_CONVERT_INT64
+		return 0, errorConvertInt64
 	}
 	return i, nil
 }
 
-func (this RequestParam) AsFloat32() (float32, error) {
-	f, err := strconv.ParseFloat(this.AsString(), 32)
+//AsFloat32 to float32
+func (rp RequestParam) AsFloat32() (float32, error) {
+	f, err := strconv.ParseFloat(rp.AsString(), 32)
 	if err != nil {
-		return 0, ERROR_CONVERT_FLOAT32
+		return 0, errorConvertFloat32
 	}
 	return float32(f), nil
 }
-func (this RequestParam) AsFloat64() (float64, error) {
-	f, err := strconv.ParseFloat(this.AsString(), 64)
+
+//AsFloat64 to float64
+func (rp RequestParam) AsFloat64() (float64, error) {
+	f, err := strconv.ParseFloat(rp.AsString(), 64)
 	if err != nil {
-		return 0, ERROR_CONVERT_FLOAT64
+		return 0, errorConvertFloat64
 	}
 	return f, nil
 }
 
-func (this RequestParam) AsString() string {
-	return string(this)
+//AsString to string
+func (rp RequestParam) AsString() string {
+	return string(rp)
 }
 
-func (this RequestParam) AsTime(layout string) (time.Time, error) {
-	t, err := time.Parse(layout, this.AsString())
+//AsTime to time type
+func (rp RequestParam) AsTime(layout string) (time.Time, error) {
+	t, err := time.Parse(layout, rp.AsString())
 	if err != nil {
-		return time.Now(), ERROR_CONVERT_TIME
+		return time.Now(), errorConvertTime
 	}
 	return t, err
 }
 
+//PathFragment 动态 Path 里面的变量片段
 type PathFragment map[string]RequestParam
 
+//EmptyParam 空参数
 var EmptyParam = RequestParam("")
 
-func (this PathFragment) Get(key string) (RequestParam, error) {
-	if p, ok := this[key]; ok {
+//Get get RequestParam form key
+func (pf PathFragment) Get(key string) (RequestParam, error) {
+	if p, ok := pf[key]; ok {
 		return p, nil
 	}
 	return EmptyParam, fmt.Errorf("param [%s] is nil", key)
 }
 
-func (this PathFragment) GetAsInt(key string) (int, error) {
-	v, err := this.Get(key)
+//GetAsInt get a int from key
+func (pf PathFragment) GetAsInt(key string) (int, error) {
+	v, err := pf.Get(key)
 	if err != nil {
 		return 0, err
 	}
 	return v.AsInt()
 }
 
-func (this PathFragment) GetAsInt32(key string) (int32, error) {
-	v, err := this.Get(key)
+//GetAsInt32 get a int32 form key
+func (pf PathFragment) GetAsInt32(key string) (int32, error) {
+	v, err := pf.Get(key)
 	if err != nil {
 		return 0, err
 	}
 	return v.AsInt32()
 }
 
-func (this PathFragment) GetAsInt64(key string) (int64, error) {
-	v, err := this.Get(key)
+//GetAsInt64 get a int64 from from key
+func (pf PathFragment) GetAsInt64(key string) (int64, error) {
+	v, err := pf.Get(key)
 	if err != nil {
 		return 0, err
 	}
 	return v.AsInt64()
 }
 
-func (this PathFragment) GetAsFloat32(key string) (float32, error) {
-	v, err := this.Get(key)
+//GetAsFloat32 get a float32 from key
+func (pf PathFragment) GetAsFloat32(key string) (float32, error) {
+	v, err := pf.Get(key)
 	if err != nil {
 		return 0, err
 	}
 	return v.AsFloat32()
 }
 
-func (this PathFragment) GetAsFloat64(key string) (float64, error) {
-	v, err := this.Get(key)
+//GetAsFloat64 get a float64 from key
+func (pf PathFragment) GetAsFloat64(key string) (float64, error) {
+	v, err := pf.Get(key)
 	if err != nil {
 		return 0, err
 	}
 	return v.AsFloat64()
 }
 
-func (this PathFragment) GetAsTime(key string, layout string) (time.Time, error) {
-	v, err := this.Get(key)
+//GetAsTime get a Time from key
+func (pf PathFragment) GetAsTime(key string, layout string) (time.Time, error) {
+	v, err := pf.Get(key)
 	if err != nil {
 		return time.Now(), err
 	}
 	return v.AsTime(layout)
 }
 
-func (this PathFragment) GetAsString(key string) (string, error) {
-	v, err := this.Get(key)
+//GetAsString get a string form key
+func (pf PathFragment) GetAsString(key string) (string, error) {
+	v, err := pf.Get(key)
 	if err != nil {
 		return "", err
 	}

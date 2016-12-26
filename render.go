@@ -10,13 +10,18 @@ import (
 )
 
 var (
+	//DefaultCharset 默认的字符集
 	DefaultCharset = "utf-8"
 
-	Default_Render_Json = Render_Json{Charset: DefaultCharset}
-	Default_Render_Xml  = Render_Xml{Charset: DefaultCharset}
-	Default_Render_Text = Render_Text{Charset: DefaultCharset}
+	//DefaultRenderJSON 默认的 Json 渲染器
+	DefaultRenderJSON = RenderJSON{Charset: DefaultCharset}
+	//DefaultRenderXML 默认的 Xml 渲染器
+	DefaultRenderXML = RenderXML{Charset: DefaultCharset}
+	//DefaultRenderText 默认的 Text 渲染器
+	DefaultRenderText = RenderText{Charset: DefaultCharset}
 )
 
+//Render 渲染器接口
 type Render interface {
 	ContentType() string
 	Write(w http.ResponseWriter, data interface{}) error
@@ -33,7 +38,7 @@ func renderReply(w http.ResponseWriter, render Render, data interface{}) error {
 }
 
 func writeBody(w io.Writer, data interface{}) error {
-	var err error = nil
+	var err error
 	switch v := data.(type) {
 	case string:
 		_, err = w.Write([]byte(v))
@@ -54,15 +59,18 @@ func writeBody(w io.Writer, data interface{}) error {
 	return err
 }
 
-type Render_Json struct {
+//RenderJSON json格式的渲染器
+type RenderJSON struct {
 	Charset string
 }
 
-func (this Render_Json) ContentType() string {
-	return "application/json; charset=" + this.Charset
+//ContentType implement Render func
+func (render RenderJSON) ContentType() string {
+	return "application/json; charset=" + render.Charset
 }
 
-func (this Render_Json) Write(w http.ResponseWriter, data interface{}) error {
+//Write implement Render func
+func (render RenderJSON) Write(w http.ResponseWriter, data interface{}) error {
 	v, err := ffjson.Marshal(data)
 	if err != nil {
 		return err
@@ -70,28 +78,34 @@ func (this Render_Json) Write(w http.ResponseWriter, data interface{}) error {
 	return writeBody(w, v)
 }
 
-type Render_Text struct {
+//RenderText text格式的渲染器
+type RenderText struct {
 	Charset string
 }
 
-func (this Render_Text) ContentType() string {
-	return "text/plain; charset=" + this.Charset
+//ContentType implement Render func
+func (render RenderText) ContentType() string {
+	return "text/plain; charset=" + render.Charset
 }
 
-func (this Render_Text) Write(w http.ResponseWriter, data interface{}) error {
+//Write implement Render func
+func (render RenderText) Write(w http.ResponseWriter, data interface{}) error {
 	return writeBody(w, data)
 }
 
-type Render_Xml struct {
+//RenderXML xml格式的渲染器
+type RenderXML struct {
 	Charset string
 }
 
-func (this Render_Xml) ContentType() string {
-	return "text/plain; charset=" + this.Charset
+//ContentType implement Render func
+func (render RenderXML) ContentType() string {
+	return "text/plain; charset=" + render.Charset
 }
 
-func (this Render_Xml) Write(w http.ResponseWriter, data interface{}) error {
-	w.Header().Set("content-type", "application/xml; charset="+this.Charset)
+//Write implement Render func
+func (render RenderXML) Write(w http.ResponseWriter, data interface{}) error {
+	w.Header().Set("content-type", "application/xml; charset="+render.Charset)
 	v, err := xml.Marshal(data)
 	if err != nil {
 		return err

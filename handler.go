@@ -8,11 +8,12 @@ import (
 	"github.com/coffeehc/logger"
 )
 
+//RequestHandler 处理 Request的方法定义
 type RequestHandler func(reply Reply)
 
 type requestHandler struct {
-	method            HttpMethod
-	defineUri         string
+	method            RequestMethod
+	defineURI         string
 	hasPathFragments  bool
 	uriConversions    map[string]int
 	pathSize          int
@@ -22,62 +23,62 @@ type requestHandler struct {
 	//accessCount int64
 }
 
-func (this *requestHandler) doAction(reply Reply) {
-	requestUri := reply.GetRequest().RequestURI
-	if this.hasPathFragments {
-		paths := strings.Split(requestUri, PATH_SEPARATOR)
-		if this.pathSize != len(paths) {
-			panic(errors.New(logger.Error("需要解析的uri[%s]不匹配定义的uri[%s]", requestUri, this.defineUri)))
+func (handler *requestHandler) doAction(reply Reply) {
+	requestURI := reply.GetRequest().RequestURI
+	if handler.hasPathFragments {
+		paths := strings.Split(requestURI, pathSeparator)
+		if handler.pathSize != len(paths) {
+			panic(errors.New(logger.Error("需要解析的uri[%s]不匹配定义的uri[%s]", requestURI, handler.defineURI)))
 		}
-		for name, index := range this.uriConversions {
+		for name, index := range handler.uriConversions {
 			reply.AddPathFragment(name, paths[index])
 		}
 	}
-	this.requestHandleFunc(reply)
+	handler.requestHandleFunc(reply)
 }
 
 //用于匹配是否
-func (this *requestHandler) match(uri string) bool {
-	if this.hasPathFragments {
-		return this.exp.MatchString(uri)
+func (handler *requestHandler) match(uri string) bool {
+	if handler.hasPathFragments {
+		return handler.exp.MatchString(uri)
 	}
-	return this.defineUri == uri
+	return handler.defineURI == uri
 }
 
-func buildRequestHandler(path string, method HttpMethod, requestHandlerFunc RequestHandler) (*requestHandler, error) {
-	if !strings.HasPrefix(path, PATH_SEPARATOR) {
-		return nil, errors.New(logger.Error("定义的Uri必须是%s前缀", PATH_SEPARATOR))
+func buildRequestHandler(path string, method RequestMethod, requestHandlerFunc RequestHandler) (*requestHandler, error) {
+	if !strings.HasPrefix(path, pathSeparator) {
+		return nil, errors.New(logger.Error("定义的Uri必须是%s前缀", pathSeparator))
 	}
-	paths := strings.Split(path, PATH_SEPARATOR)
+	paths := strings.Split(path, pathSeparator)
 	uriConversions := make(map[string]int, 0)
-	conversionUri := ""
+	conversionURI := ""
 	pathSize := 0
 	for index, p := range paths {
 		pathSize++
 		if p == "" {
 			continue
 		}
-		if strings.HasPrefix(p, WILDCARD_PREFIX) && strings.HasSuffix(p, WILDCARD_SUFFIX) {
-			name := string([]byte(p)[len(WILDCARD_PREFIX) : len(p)-len(WILDCARD_SUFFIX)])
+		if strings.HasPrefix(p, wildcardPrefix) && strings.HasSuffix(p, wildcardSuffix) {
+			name := string([]byte(p)[len(wildcardPrefix) : len(p)-len(wildcardSuffix)])
 			uriConversions[name] = index
 			p = _conversion
 		}
-		conversionUri += (PATH_SEPARATOR + p)
+		conversionURI += (pathSeparator + p)
 	}
-	if conversionUri == "" {
-		conversionUri = PATH_SEPARATOR
+	if conversionURI == "" {
+		conversionURI = pathSeparator
 	}
-	if strings.HasSuffix(path, PATH_SEPARATOR) {
-		conversionUri += PATH_SEPARATOR
+	if strings.HasSuffix(path, pathSeparator) {
+		conversionURI += pathSeparator
 	}
-	exp, err := regexp.Compile("^" + conversionUri + "$")
+	exp, err := regexp.Compile("^" + conversionURI + "$")
 	if err != nil {
 		return nil, err
 	}
 	return &requestHandler{
 		exp:               exp,
 		method:            method,
-		defineUri:         path,
+		defineURI:         path,
 		hasPathFragments:  len(uriConversions) > 0,
 		uriConversions:    uriConversions,
 		pathSize:          pathSize,
@@ -87,12 +88,12 @@ func buildRequestHandler(path string, method HttpMethod, requestHandlerFunc Requ
 
 type requestHandlerList []*requestHandler
 
-func (this requestHandlerList) Len() int {
-	return len(this)
+func (list requestHandlerList) Len() int {
+	return len(list)
 }
-func (this requestHandlerList) Less(i, j int) bool {
-	uri1s := strings.Split(this[i].exp.String(), PATH_SEPARATOR)
-	uri2s := strings.Split(this[j].exp.String(), PATH_SEPARATOR)
+func (list requestHandlerList) Less(i, j int) bool {
+	uri1s := strings.Split(list[i].exp.String(), pathSeparator)
+	uri2s := strings.Split(list[j].exp.String(), pathSeparator)
 	if len(uri1s) != len(uri2s) {
 		return len(uri1s) > len(uri2s)
 	}
@@ -107,6 +108,6 @@ func (this requestHandlerList) Less(i, j int) bool {
 	}
 	return true
 }
-func (this requestHandlerList) Swap(i, j int) {
-	this[i], this[j] = this[j], this[i]
+func (list requestHandlerList) Swap(i, j int) {
+	list[i], list[j] = list[j], list[i]
 }

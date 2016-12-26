@@ -4,27 +4,24 @@ import (
 	"fmt"
 )
 
-type HttpError struct {
+// HTTPError 对 http 处理的过程中异常的封装
+type HTTPError struct {
 	Code    int         `json:"httpcode"`
 	Message interface{} `json:"message"`
 }
 
-func (this *HttpError) Error() string {
-	return fmt.Sprintf("%d:%s", this.Code, this.Message)
+//Error 实现的 error接口
+func (httpError *HTTPError) Error() string {
+	return fmt.Sprintf("%d:%s", httpError.Code, httpError.Message)
 }
 
-func NewHttpErr(code int, message string) *HttpError {
-	return &HttpError{code, message}
+//NewHTTPErr 创建一个新的 Http 错误描述
+func NewHTTPErr(code int, message string) *HTTPError {
+	return &HTTPError{code, message}
 }
 
-func HTTPERR_500(message string) *HttpError {
-	return &HttpError{500, message}
-}
+// TODO 需要有一个地方能够注册异常的处理
+type errorHandlers map[int]RequestErrorHandler
 
-func HTTPERR_400(message string) *HttpError {
-	return &HttpError{400, message}
-}
-
-type ErrorHandlers map[int]RequestErrorHandler
-
-type RequestErrorHandler func(err *HttpError, reply Reply)
+//RequestErrorHandler 请求异常的处理方法定义
+type RequestErrorHandler func(err *HTTPError, reply Reply)

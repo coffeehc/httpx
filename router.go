@@ -1,4 +1,3 @@
-// route
 package web
 
 import (
@@ -9,37 +8,37 @@ import (
 )
 
 const (
-	PATH_SEPARATOR  = "/"
-	WILDCARD_PREFIX = "{"
-	WILDCARD_SUFFIX = "}"
-	_conversion     = "[^/]*"
+	pathSeparator  = "/"
+	wildcardPrefix = "{"
+	wildcardSuffix = "}"
+	_conversion    = "[^/]*"
 )
 
 type router struct {
 	matcher       handlerMatcher
 	filter        *filterWarp
-	errorHandlers ErrorHandlers
+	errorHandlers errorHandlers
 }
 
 func newRouter() *router {
-	_router := &router{matcher: handlerMatcher{requestHandlerMap: make(map[HttpMethod]requestHandlerList)}}
-	_router.errorHandlers = ErrorHandlers(make(map[int]RequestErrorHandler, 0))
+	_router := &router{matcher: handlerMatcher{requestHandlerMap: make(map[RequestMethod]requestHandlerList)}}
+	_router.errorHandlers = errorHandlers(make(map[int]RequestErrorHandler, 0))
 	_router.filter = &filterWarp{
-		matcher: newServletStyleUriPatternMatcher("/*"),
+		matcher: newServletStyleURIPatternMatcher("/*"),
 		requestFilter: func(reply Reply, chain FilterChain) {
 			defer func() {
 				if err := recover(); err != nil {
-					var httpErr *HttpError
+					var httpErr *HTTPError
 					var ok bool
-					if httpErr, ok = err.(*HttpError); !ok {
-						httpErr = HTTPERR_500(fmt.Sprintf("%#s", err))
+					if httpErr, ok = err.(*HTTPError); !ok {
+						httpErr = NewHTTPErr(500, fmt.Sprintf("%#s", err))
 					}
 					reply.SetStatusCode(httpErr.Code)
 					if handler, ok := _router.errorHandlers[httpErr.Code]; ok {
 						handler(httpErr, reply)
 						return
 					}
-					reply.With(httpErr.Message).As(Default_Render_Json)
+					reply.With(httpErr.Message).As(DefaultRenderJSON)
 				}
 			}()
 			chain(reply)
@@ -49,28 +48,27 @@ func newRouter() *router {
 	return _router
 }
 
-func (router *router) addFirstFilter(matcher UriPatternMatcher, actionFilter Filter) {
-	oldFilter := router.filter
+func (r *router) addFirstFilter(matcher URIPatternMatcher, actionFilter Filter) {
+	oldFilter := r.filter
 	newFilter := newFilterWarp(matcher, actionFilter)
 	newFilter.nextFilter = oldFilter
-	router.filter = newFilter
+	r.filter = newFilter
 
 }
 
-func (route *router) addLastFilter(matcher UriPatternMatcher, actionFilter Filter) {
-	route.filter.addNextFilter(newFilterWarp(matcher, actionFilter))
+func (r *router) addLastFilter(matcher URIPatternMatcher, actionFilter Filter) {
+	r.filter.addNextFilter(newFilterWarp(matcher, actionFilter))
 }
 
-func (route *router) handle(reply Reply) {
+func (r *router) handle(reply Reply) {
 	request := reply.GetRequest()
 	request.ParseForm()
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
-	//TODO ???
 	path := request.RequestURI
-	method := HttpMethod(strings.ToUpper(request.Method))
-	handler := route.matcher.getActionHandler(path, method)
+	method := RequestMethod(strings.ToUpper(request.Method))
+	handler := r.matcher.getActionHandler(path, method)
 	if handler == nil {
-		reply.SetStatusCode(404).With("404:you are lost")
+		reply.SetStatusCode(404).With(NewHTTPErr(404, "you are lost")).As(DefaultRenderJSON)
 		logger.Error("Not found Handler for[%s] [%s]", method, path)
 		return
 	}

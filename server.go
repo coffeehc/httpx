@@ -1,4 +1,3 @@
-// server
 package web
 
 import (
@@ -13,13 +12,14 @@ import (
 	"os"
 )
 
-type HttpServer interface {
+//Server the http server interface
+type Server interface {
 	Start() <-chan error
 	Stop()
 	GetServerAddress() string
-	RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error
-	RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error
-	Register(path string, method HttpMethod, requestHandler RequestHandler) error
+	RegisterHandlerFunc(path string, method RequestMethod, handlerFunc http.HandlerFunc) error
+	RegisterHandler(path string, method RequestMethod, handler http.Handler) error
+	Register(path string, method RequestMethod, requestHandler RequestHandler) error
 
 	AddFirstFilter(uriPattern string, actionFilter Filter)
 	AddLastFilter(uriPattern string, actionFilter Filter)
@@ -32,42 +32,42 @@ type _Server struct {
 	httpServer *http.Server
 	router     *router
 	listener   net.Listener
-	config     *HttpServerConfig
+	config     *Config
 }
 
-//创建一个Server,参数可以为空,默认使用0.0.0.0:8888
-func NewHttpServer(serverConfig *HttpServerConfig) HttpServer {
+//NewServer 创建一个Http Server,参数可以为空,默认使用0.0.0.0:8888
+func NewServer(serverConfig *Config) Server {
 	if serverConfig == nil {
-		serverConfig = new(HttpServerConfig)
+		serverConfig = new(Config)
 	}
 	return &_Server{router: newRouter(), config: serverConfig}
 }
 
-func (this *_Server) Stop() {
-	if this.listener != nil {
+func (s *_Server) Stop() {
+	if s.listener != nil {
 		logger.Info("http Listener Close")
-		this.listener.Close()
+		s.listener.Close()
 	}
 }
 
-func (this *_Server) Start() <-chan error {
-	logger.Debug("serverConfig is %#v", this.config)
-	this.router.matcher.sort()
-	conf := this.config
+func (s *_Server) Start() <-chan error {
+	logger.Debug("serverConfig is %#v", s.config)
+	s.router.matcher.sort()
+	conf := s.config
 	server := &http.Server{
 		Addr:           conf.getServerAddr(),
-		Handler:        http.HandlerFunc(this.serverHttpHandler),
+		Handler:        http.HandlerFunc(s.serverHandler),
 		ReadTimeout:    conf.getReadTimeout(),
 		MaxHeaderBytes: conf.MaxHeaderBytes,
 		TLSConfig:      conf.TLSConfig,
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
-		ErrorLog:       logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_DEBUG, "", "", os.Stdout),
+		ErrorLog:       logger.CreatLoggerAdapter(logger.LoggerLevelError, "", "", os.Stdout),
 	}
-	if conf.HttpErrorLogout != nil {
-		server.ErrorLog = logger.CreatLoggerAdapter(logger.LOGGER_LEVEL_ERROR, "", "", conf.HttpErrorLogout)
+	if conf.HTTPErrorLogout != nil {
+		server.ErrorLog = logger.CreatLoggerAdapter(logger.LoggerLevelError, "", "", conf.HTTPErrorLogout)
 	}
-	this.httpServer = server
+	s.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())
 	errorSign := make(chan error, 1)
 	listener, err := net.Listen("tcp", conf.getServerAddr())
@@ -77,81 +77,81 @@ func (this *_Server) Start() <-chan error {
 		errorSign <- err
 		return errorSign
 	}
-	this.listener = tcpKeepAliveListener{TCPListener: listener.(*net.TCPListener), keepAliveDuration: conf.getKeepAliveDuration()}
+	s.listener = &tcpKeepAliveListener{Listener: listener, keepAliveDuration: conf.getKeepAliveDuration()}
 	if conf.TLSConfig != nil {
 		server.TLSConfig = conf.TLSConfig
-		this.listener = tls.NewListener(this.listener, server.TLSConfig)
+		s.listener = tls.NewListener(s.listener, server.TLSConfig)
 	}
 	go func() {
-		err := server.Serve(this.listener)
+		err := server.Serve(s.listener)
 		errorSign <- errors.New(logger.Error("启动 HttpServer 失败:%s", err))
 	}()
 	return errorSign
 }
 
-func (this *_Server) GetServerAddress() string {
-	return this.config.getServerAddr()
+func (s *_Server) GetServerAddress() string {
+	return s.config.getServerAddr()
 }
 
-func (this *_Server) serverHttpHandler(responseWriter http.ResponseWriter, request *http.Request) {
-	reply := newHttpReply(request, responseWriter, this.config)
+func (s *_Server) serverHandler(responseWriter http.ResponseWriter, request *http.Request) {
+	reply := newHTTPReply(request, responseWriter, s.config)
 	defer func() {
 		if err := recover(); err != nil {
-			var httpErr *HttpError
+			var httpErr *HTTPError
 			var ok bool
-			if httpErr, ok = err.(*HttpError); !ok {
-				httpErr = HTTPERR_500(fmt.Sprintf("%#s", err))
+			if httpErr, ok = err.(*HTTPError); !ok {
+				httpErr = NewHTTPErr(500, fmt.Sprintf("%s", err))
 			}
 			reply.SetStatusCode(httpErr.Code)
-			if handler, ok := this.router.errorHandlers[httpErr.Code]; ok {
+			if handler, ok := s.router.errorHandlers[httpErr.Code]; ok {
 				handler(httpErr, reply)
 				return
 			}
-			reply.With(httpErr.Message).As(Default_Render_Json)
+			reply.With(httpErr.Message).As(DefaultRenderJSON)
 		}
 		reply.finishReply()
 	}()
-	this.router.filter.doFilter(reply)
+	s.router.filter.doFilter(reply)
 
 }
 
-func (server *_Server) RegisterHttpHandlerFunc(path string, method HttpMethod, handlerFunc http.HandlerFunc) error {
-	return server.RegisterHttpHandler(path, method, handlerFunc)
+func (s *_Server) RegisterHandlerFunc(path string, method RequestMethod, handlerFunc http.HandlerFunc) error {
+	return s.RegisterHandler(path, method, handlerFunc)
 }
 
 //适配 Http原生的 Handler 接口
-func (server *_Server) RegisterHttpHandler(path string, method HttpMethod, handler http.Handler) error {
+func (s *_Server) RegisterHandler(path string, method RequestMethod, handler http.Handler) error {
 	requestHandler := func(reply Reply) {
-		reply.AdapterHttpHandler(true)
+		reply.AdapterHTTPHandler(true)
 		handler.ServeHTTP(reply.GetResponseWriter(), reply.GetRequest())
 	}
-	return server.Register(path, method, requestHandler)
+	return s.Register(path, method, requestHandler)
 }
 
-func (server *_Server) Register(path string, method HttpMethod, requestHandler RequestHandler) error {
-	err := server.router.matcher.regeditAction(path, method, requestHandler)
+func (s *_Server) Register(path string, method RequestMethod, requestHandler RequestHandler) error {
+	err := s.router.matcher.regeditAction(path, method, requestHandler)
 	if err != nil {
 		logger.Error("注册 Handler 失败:%s", err)
 	}
 	return err
 }
 
-func (server *_Server) AddFirstFilter(uriPattern string, actionFilter Filter) {
-	server.router.addFirstFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
+func (s *_Server) AddFirstFilter(uriPattern string, actionFilter Filter) {
+	s.router.addFirstFilter(newServletStyleURIPatternMatcher(uriPattern), actionFilter)
 }
 
-func (server *_Server) AddLastFilter(uriPattern string, actionFilter Filter) {
-	server.router.addLastFilter(newServletStyleUriPatternMatcher(uriPattern), actionFilter)
+func (s *_Server) AddLastFilter(uriPattern string, actionFilter Filter) {
+	s.router.addLastFilter(newServletStyleURIPatternMatcher(uriPattern), actionFilter)
 }
 
-func (server *_Server) AddFilterWithRegex(uriPattern string, actionFilter Filter) {
-	server.router.addLastFilter(newRegexUriPatternMatcher(uriPattern), actionFilter)
+func (s *_Server) AddFilterWithRegex(uriPattern string, actionFilter Filter) {
+	s.router.addLastFilter(newRegexURIPatternMatcher(uriPattern), actionFilter)
 }
 
-func (server *_Server) AddRequestErrorHandler(code int, handler RequestErrorHandler) error {
-	if _, ok := server.router.errorHandlers[code]; ok {
+func (s *_Server) AddRequestErrorHandler(code int, handler RequestErrorHandler) error {
+	if _, ok := s.router.errorHandlers[code]; ok {
 		return errors.New(logger.Error("已经注册了[%d]异常响应码的处理方法,注册失败", code))
 	}
-	server.router.errorHandlers[code] = handler
+	s.router.errorHandlers[code] = handler
 	return nil
 }

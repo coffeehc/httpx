@@ -1,4 +1,3 @@
-// logger project logger.go
 package logger
 
 import (
@@ -14,13 +13,13 @@ import (
 
 //日志格式定义
 const (
-	FORMAT_TIME     = "%T"
-	FORMAT_LEVEL    = "%L"
-	FORMAT_CODEINFO = "%C"
-	FORMAT_MESSGAE  = "%M"
+	FormatTime     = "%T" //显示时间
+	FormatLevel    = "%L" //显示级别
+	FormatCodeInfo = "%C" //显示代码详情
+	FormatMessage  = "%M" //显示日志消息
 )
 
-//日志接口
+//Logger 日志接口
 type Logger interface {
 	Trace(format string, v ...interface{}) string
 	Debug(format string, v ...interface{}) string
@@ -29,83 +28,94 @@ type Logger interface {
 	Error(format string, v ...interface{}) string
 }
 
-//获取一个日志对象,主要用于和第三方包做适配
+//GetLogger 获取一个日志对象,主要用于和第三方包做适配
 func GetLogger() Logger {
 	return loggercopy
 }
 
-var loggercopy _logger
+var loggercopy = &_logger{}
 
 type _logger struct {
 }
 
-func (this _logger) Trace(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_TRACE, fmt.Sprintf(format, v...), 3)
+func (*_logger) Trace(format string, v ...interface{}) string {
+	return output(LoggerLevelTrace, fmt.Sprintf(format, v...), 3)
 }
 
-func (this _logger) Debug(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_DEBUG, fmt.Sprintf(format, v...), 3)
+func (*_logger) Debug(format string, v ...interface{}) string {
+	return output(LoggerLevelDebug, fmt.Sprintf(format, v...), 3)
 }
 
-func (this _logger) Info(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_INFO, fmt.Sprintf(format, v...), 3)
+func (*_logger) Info(format string, v ...interface{}) string {
+	return output(LoggerLevelInfo, fmt.Sprintf(format, v...), 3)
 }
 
-func (this _logger) Warn(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_WARN, fmt.Sprintf(format, v...), 3)
+func (*_logger) Warn(format string, v ...interface{}) string {
+	return output(LoggerLevelWarn, fmt.Sprintf(format, v...), 3)
 }
 
-func (this _logger) Error(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_ERROR, fmt.Sprintf(format, v...), 3)
+func (*_logger) Error(format string, v ...interface{}) string {
+	return output(LoggerLevelError, fmt.Sprintf(format, v...), 3)
 }
 
 var (
-	//默认的日志级别
-	LOGGER_DEFAULT_LEVEL = "error"
-	//日志缓冲区默认大小
-	LOGGER_DEFAULT_BUFSIZE int = 1024
-	//日志缓冲区Flush超时设置
-	LOGGER_DEFAULT_TIMEOUT time.Duration = time.Second * 1
+	//LoggerDefaultLevel 默认的日志级别
+	LoggerDefaultLevel = "error"
+	//LoggerDefaultBufsize 日志缓冲区默认大小
+	LoggerDefaultBufsize = 1024
+	//LoggerDefaultTimeout 默认超时时间
+	LoggerDefaultTimeout = time.Second * 1
 )
+
+// Level 日志级别
+type Level byte
 
 const (
-	LOGGER_LEVEL_ERROR byte = 1 << 0
-	LOGGER_LEVEL_WARN  byte = 1<<1 | LOGGER_LEVEL_ERROR
-	LOGGER_LEVEL_INFO  byte = 1<<2 | LOGGER_LEVEL_WARN
-	LOGGER_LEVEL_DEBUG byte = 1<<3 | LOGGER_LEVEL_INFO
-	LOGGER_LEVEL_TRACE byte = 1<<4 | LOGGER_LEVEL_DEBUG
+	// LoggerLevelError  Error level
+	LoggerLevelError Level = 1 << 0
+	// LoggerLevelWarn Warn level
+	LoggerLevelWarn Level = 1<<1 | LoggerLevelError
+	//LoggerLevelInfo Info level
+	LoggerLevelInfo Level = 1<<2 | LoggerLevelWarn
+	// LoggerLevelDebug Debug level
+	LoggerLevelDebug Level = 1<<3 | LoggerLevelInfo
+	// LoggerLevelTrace Trace level
+	LoggerLevelTrace Level = 1<<4 | LoggerLevelDebug
 
-	LOGGER_TIMEFORMAT_SECOND     string = "2006-01-02 15:04:05"
-	LOGGER_TIMEFORMAT_NANOSECOND string = "2006-01-02 15:04:05.999999999"
-	LOGGER_TIMEFORMAT_ALL        string = "2006-01-02 15:04:05.999999999 -0700 UTC"
-	LOGGER_CODE_DEPTH            int    = 2
+	// LoggerTimeformatSecond 显示格式为2006-01-02 15:04:05
+	LoggerTimeformatSecond string = "2006-01-02 15:04:05"
+	// LoggerTimeformatNanosecond 显示格式为2006-01-02 15:04:05.999999999
+	LoggerTimeformatNanosecond string = "2006-01-02 15:04:05.999999999"
+	// LoggerTimeformatAll 显示格式为2006-01-02 15:04:05.999999999 -0700 UTC
+	LoggerTimeformatAll string = "2006-01-02 15:04:05.999999999 -0700 UTC"
+	loggerCodeDepth     int    = 2
 )
 
-func getLevelStr(level byte) string {
+func getLevelStr(level Level) string {
 	switch level {
-	case LOGGER_LEVEL_ERROR:
+	case LoggerLevelError:
 		return "ERROR"
-	case LOGGER_LEVEL_WARN:
+	case LoggerLevelWarn:
 		return "WARN"
-	case LOGGER_LEVEL_INFO:
+	case LoggerLevelInfo:
 		return "INFO"
-	case LOGGER_LEVEL_DEBUG:
+	case LoggerLevelDebug:
 		return "DEBUG"
-	case LOGGER_LEVEL_TRACE:
+	case LoggerLevelTrace:
 		return "TRACE"
 	default:
 		return "DEBUG"
 	}
 }
 
-//日志持久化接口
+//Flusher 日志持久化接口
 type Flusher interface {
 	Flush() error
 }
 
 //日志拦截器定义
 type logFilter struct {
-	level       byte        //拦截级别
+	level       Level       //拦截级别
 	path        string      //拦截路径
 	timeFormat  string      //时间戳格式
 	format      []logFormat //日志格式
@@ -116,22 +126,22 @@ type logFilter struct {
 }
 
 //判断是否需要过滤器处理
-func (this *logFilter) canSave(level byte, lineInfo string) bool {
-	return this.level&level == level && strings.HasPrefix(lineInfo, this.path)
+func (filter *logFilter) canSave(level Level, lineInfo string) bool {
+	return filter.level&level == level && strings.HasPrefix(lineInfo, filter.path)
 }
 
-func (this *logFilter) save(buf *bytes.Buffer, content *logContent) {
+func (filter *logFilter) save(buf *bytes.Buffer, content *logContent) {
 	buf.Reset()
-	for _, f := range this.format {
+	for _, f := range filter.format {
 		buf.Write(f.data)
 		switch f.appendContent {
-		case FORMAT_TIME:
-			buf.WriteString(content.appendTime.Format(this.timeFormat))
-		case FORMAT_LEVEL:
+		case FormatTime:
+			buf.WriteString(content.appendTime.Format(filter.timeFormat))
+		case FormatLevel:
 			buf.WriteString(getLevelStr(content.level))
-		case FORMAT_CODEINFO:
+		case FormatCodeInfo:
 			buf.WriteString(content.lineInfo[1:])
-		case FORMAT_MESSGAE:
+		case FormatMessage:
 			buf.WriteString(content.content)
 		default:
 		}
@@ -139,11 +149,11 @@ func (this *logFilter) save(buf *bytes.Buffer, content *logContent) {
 	if content.content[len(content.content)-1] != '\n' {
 		buf.WriteByte('\n')
 	}
-	buf.WriteTo(this.out)
+	buf.WriteTo(filter.out)
 }
 
 //过滤器后台输出goruntine
-func (this *logFilter) run() {
+func (filter *logFilter) run() {
 	timeOut := time.Millisecond * 500
 	timer := time.NewTimer(timeOut)
 	buf := bytes.NewBuffer(nil)
@@ -155,20 +165,20 @@ func (this *logFilter) run() {
 	}()
 	for {
 		select {
-		case content := <-this.cache:
-			if this.canSave(content.level, content.lineInfo) {
-				this.save(buf, content)
+		case content := <-filter.cache:
+			if filter.canSave(content.level, content.lineInfo) {
+				filter.save(buf, content)
 			}
 		case <-timer.C:
-			if v, ok := this.out.(Flusher); ok {
+			if v, ok := filter.out.(Flusher); ok {
 				v.Flush()
 			}
 			if stop {
 				goto CLOSE
 			}
-		case <-this.stop:
+		case <-filter.stop:
 			stop = true
-			if len(this.cache) == 0 {
+			if len(filter.cache) == 0 {
 				goto CLOSE
 			}
 			timeOut = time.Millisecond * 100
@@ -176,17 +186,17 @@ func (this *logFilter) run() {
 		timer.Reset(timeOut)
 	}
 CLOSE:
-	close(this.filterClose)
+	close(filter.filterClose)
 }
 
-func (this *logFilter) clear() {
-	close(this.stop)
-	<-this.filterClose
+func (filter *logFilter) clear() {
+	close(filter.stop)
+	<-filter.filterClose
 }
 
 var (
 	filters []*logFilter
-	isStop  bool = false
+	isStop  = false
 )
 
 //启动日志
@@ -194,31 +204,31 @@ func init() {
 	loadLoggerConfig(*_loggerConf)
 }
 
-func addStdOutFilter(level byte, path string, timeFormat string, format string) {
+func addStdOutFilter(level Level, path string, timeFormat string, format string) {
 	AddFileter(level, path, timeFormat, format, os.Stdout)
 }
 
-//清空过滤器,主要用于自定义处理日志
+//ClearFilter 清空过滤器,主要用于自定义处理日志
 func ClearFilter() {
 	filters = make([]*logFilter, 0)
 }
 
-//添加日志过滤器,参数说明:级别,包路径,时间格式,Writer接口
-func AddFileter(level byte, path string, timeFormat string, format string, out io.Writer) {
+//AddFileter 添加日志过滤器,参数说明:级别,包路径,时间格式,Writer接口
+func AddFileter(level Level, path string, timeFormat string, format string, out io.Writer) {
 	filter := newFilter(level, path, timeFormat, format, out)
 	filters = append(filters, filter)
 	go filter.run()
 }
 
-func newFilter(level byte, path string, timeFormat string, format string, out io.Writer) *logFilter {
+func newFilter(level Level, path string, timeFormat string, format string, out io.Writer) *logFilter {
 	if timeFormat == "" {
-		timeFormat = LOGGER_TIMEFORMAT_SECOND
+		timeFormat = LoggerTimeformatSecond
 	}
 	if path == "" {
 		path = "/"
 	}
 	if timeFormat == "" {
-		timeFormat = LOGGER_TIMEFORMAT_SECOND
+		timeFormat = LoggerTimeformatSecond
 	}
 	if format == "" {
 		format = "%T %L %C %M"
@@ -253,23 +263,23 @@ func parseFormat(format string) []logFormat {
 		if b == '%' {
 			switch fc[i+1] {
 			case 'T':
-				fs = append(fs, logFormat{data: fc[start:i], appendContent: FORMAT_TIME})
-				i += 1
+				fs = append(fs, logFormat{data: fc[start:i], appendContent: FormatTime})
+				i++
 				start = i + 1
 				continue
 			case 'L':
-				fs = append(fs, logFormat{data: fc[start:i], appendContent: FORMAT_LEVEL})
-				i += 1
+				fs = append(fs, logFormat{data: fc[start:i], appendContent: FormatLevel})
+				i++
 				start = i + 1
 				break
 			case 'C':
-				fs = append(fs, logFormat{data: fc[start:i], appendContent: FORMAT_CODEINFO})
-				i += 1
+				fs = append(fs, logFormat{data: fc[start:i], appendContent: FormatCodeInfo})
+				i++
 				start = i + 1
 				break
 			case 'M':
-				fs = append(fs, logFormat{data: fc[start:i], appendContent: FORMAT_MESSGAE})
-				i += 1
+				fs = append(fs, logFormat{data: fc[start:i], appendContent: FormatMessage})
+				i++
 				start = i + 1
 				break
 			}
@@ -283,11 +293,12 @@ func parseFormat(format string) []logFormat {
 
 type logContent struct {
 	appendTime time.Time
-	level      byte
+	level      Level
 	lineInfo   string
 	content    string
 }
 
+//WaitToClose called then the application end
 func WaitToClose() {
 	isStop = true
 	for _, filter := range filters {
@@ -298,7 +309,7 @@ func WaitToClose() {
 }
 
 // real out implement
-func output(logLevel byte, content string, codeLevel int) string {
+func output(logLevel Level, content string, codeLevel int) string {
 	if isStop {
 		return ""
 	}
@@ -306,7 +317,7 @@ func output(logLevel byte, content string, codeLevel int) string {
 		return ""
 	}
 	_, file, line, ok := runtime.Caller(codeLevel)
-	var lineInfo string = "-:0"
+	lineInfo := "-:0"
 	if ok {
 		index := strings.Index(file, "/src/") + 4
 		lineInfo = file[index:] + ":" + strconv.Itoa(line)
@@ -320,31 +331,32 @@ func output(logLevel byte, content string, codeLevel int) string {
 	return content
 }
 
-func Printf(logLevel byte, codeLevel int, format string, v ...interface{}) string {
+//Printf  logger Printer
+func Printf(logLevel Level, codeLevel int, format string, v ...interface{}) string {
 	return output(logLevel, fmt.Sprintf(format, v...), codeLevel)
 }
 
-//print trace log
+//Trace print trace log
 func Trace(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_TRACE, fmt.Sprintf(format, v...), LOGGER_CODE_DEPTH)
+	return output(LoggerLevelTrace, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
-//print debug log
+//Debug print debug log
 func Debug(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_DEBUG, fmt.Sprintf(format, v...), LOGGER_CODE_DEPTH)
+	return output(LoggerLevelDebug, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
-//print Info log
+//Info print Info log
 func Info(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_INFO, fmt.Sprintf(format, v...), LOGGER_CODE_DEPTH)
+	return output(LoggerLevelInfo, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
-//print Warn log
+//Warn print Warn log
 func Warn(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_WARN, fmt.Sprintf(format, v...), LOGGER_CODE_DEPTH)
+	return output(LoggerLevelWarn, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
-// print Error log
+// Error print Error log
 func Error(format string, v ...interface{}) string {
-	return output(LOGGER_LEVEL_ERROR, fmt.Sprintf(format, v...), LOGGER_CODE_DEPTH)
+	return output(LoggerLevelError, fmt.Sprintf(format, v...), loggerCodeDepth)
 }

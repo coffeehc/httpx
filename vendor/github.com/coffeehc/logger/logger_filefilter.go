@@ -1,9 +1,9 @@
-// logger_filefilter
 package logger
 
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-//文件日志循环策略
+//FileLogRotatePolicy 文件日志循环策略
 type FileLogRotatePolicy interface {
 	//是否需要循环分割
 	CanRotate(fileLogWriter *FileLogWriter) bool
@@ -22,42 +22,49 @@ type FileLogRotatePolicy interface {
 type defaultRotatePolicy struct {
 }
 
-func (this *defaultRotatePolicy) CanRotate(fileLogWriter *FileLogWriter) bool {
+func (defaultRotatePolicy) CanRotate(fileLogWriter *FileLogWriter) bool {
 	return false
 }
-func (this *defaultRotatePolicy) RotateAfter() {
+
+func (defaultRotatePolicy) RotateAfter() {
 }
 
-//按文件大小的循环日志的策略
+//SizeRotatePolicy 按文件大小的循环日志的策略
 type SizeRotatePolicy struct {
 	//文件最大大小
 	maxBytes int64
 }
 
-//创建一个按大小循环的策略
+//NewSizeRotatePolicy 创建一个按大小循环的策略
 func NewSizeRotatePolicy(maxBytes int64) *SizeRotatePolicy {
 	return &SizeRotatePolicy{maxBytes: maxBytes}
 }
 
-func (this *SizeRotatePolicy) CanRotate(fileLogWriter *FileLogWriter) bool {
-	return fileLogWriter.count > this.maxBytes
-}
-func (this *SizeRotatePolicy) RotateAfter() {
+// CanRotate 判断文件是否到最大限制大小
+func (policy *SizeRotatePolicy) CanRotate(fileLogWriter *FileLogWriter) bool {
+	return fileLogWriter.count > policy.maxBytes
 }
 
-//按时间循环日志的策略
+// RotateAfter 在循环截断后的处理,未实现
+func (*SizeRotatePolicy) RotateAfter() {
+}
+
+//TimeRotatePolicy 按时间循环日志的策略
 type TimeRotatePolicy struct {
 	canRotate bool
 }
 
-func (this *TimeRotatePolicy) CanRotate(fileLogWriter *FileLogWriter) bool {
-	return this.canRotate
-}
-func (this *TimeRotatePolicy) RotateAfter() {
-	this.canRotate = false
+// CanRotate 判断文件是否能 Rotate
+func (policy *TimeRotatePolicy) CanRotate(fileLogWriter *FileLogWriter) bool {
+	return policy.canRotate
 }
 
-//创建信的按时间循环日志的策略
+// RotateAfter 在循环截断后的处理
+func (policy *TimeRotatePolicy) RotateAfter() {
+	policy.canRotate = false
+}
+
+//NewTimeRotatePolicy 创建信的按时间循环日志的策略
 func NewTimeRotatePolicy(delay time.Duration) *TimeRotatePolicy {
 	this := new(TimeRotatePolicy)
 	this.canRotate = false
@@ -77,7 +84,7 @@ func NewTimeRotatePolicy(delay time.Duration) *TimeRotatePolicy {
 	return this
 }
 
-//文件日志Writer封装
+//FileLogWriter 文件日志Writer封装
 type FileLogWriter struct {
 	err    error
 	buf    []byte
@@ -87,7 +94,7 @@ type FileLogWriter struct {
 	count  int64
 }
 
-//文件日志配置
+//FileLogConfig 文件日志配置
 type FileLogConfig struct {
 	Path         string //匹配路径
 	Timeformat   string //时间格式
@@ -95,7 +102,7 @@ type FileLogConfig struct {
 	Rotate       int                 //rotate备份个数
 	StorePath    string              //日志存放路径,如:/log/test/log.log
 	RotatePolicy FileLogRotatePolicy //循环策略
-	Level        byte                //日志级别
+	Level        Level               //日志级别
 	writer       *FileLogWriter
 }
 
@@ -123,7 +130,7 @@ func addFileFilter(conf *FileLogConfig) {
 	AddFileter(conf.Level, conf.Path, conf.Timeformat, conf.Format, conf.writer)
 }
 
-func addFileFilterForDefualt(level byte, path string, logPath string, timeFormat string, format string) {
+func addFileFilterForDefualt(level Level, path string, logPath string, timeFormat string, format string) {
 	conf := new(FileLogConfig)
 	conf.Level = level
 	conf.Path = path
@@ -133,7 +140,7 @@ func addFileFilterForDefualt(level byte, path string, logPath string, timeFormat
 	addFileFilter(conf)
 }
 
-func addFileFilterForTime(level byte, path string, logPath string, times time.Duration, rotate int, timeFormat string, format string) {
+func addFileFilterForTime(level Level, path string, logPath string, times time.Duration, rotate int, timeFormat string, format string) {
 	conf := new(FileLogConfig)
 	conf.Level = level
 	conf.Path = path
@@ -145,7 +152,7 @@ func addFileFilterForTime(level byte, path string, logPath string, times time.Du
 	addFileFilter(conf)
 }
 
-func addFileFilterForSize(level byte, path string, logPath string, maxBytes int64, rotate int, timeFormat string, format string) {
+func addFileFilterForSize(level Level, path string, logPath string, maxBytes int64, rotate int, timeFormat string, format string) {
 	conf := new(FileLogConfig)
 	conf.Level = level
 	conf.Path = path
@@ -157,40 +164,40 @@ func addFileFilterForSize(level byte, path string, logPath string, maxBytes int6
 	addFileFilter(conf)
 }
 
-//执行循环切割日志操作
-func (this *FileLogWriter) Rotate() {
-	if this.wr == nil {
-		err := os.MkdirAll(filepath.Dir(this.config.StorePath), 0666)
+//Rotate 执行循环切割日志操作
+func (writer *FileLogWriter) Rotate() {
+	if writer.wr == nil {
+		err := os.MkdirAll(filepath.Dir(writer.config.StorePath), 0666)
 		if err != nil {
-			panic(fmt.Sprintf("创建日志目录[%s]失败:%s", filepath.Dir(this.config.StorePath), err))
+			panic(fmt.Sprintf("创建日志目录[%s]失败:%s", filepath.Dir(writer.config.StorePath), err))
 		}
-		fileInfo, err := os.Stat(this.config.StorePath)
+		fileInfo, err := os.Stat(writer.config.StorePath)
 		if err == nil && fileInfo.Size() != 0 {
-			bakName := this.config.StorePath + "." + strconv.FormatInt(time.Now().Unix(), 10)
-			err := os.Rename(this.config.StorePath, bakName)
+			bakName := writer.config.StorePath + "." + strconv.FormatInt(time.Now().Unix(), 10)
+			err := os.Rename(writer.config.StorePath, bakName)
 			if err != nil {
 				panic(fmt.Sprintf("备份老的日志文件失败:%s", err))
 			}
 		}
-		this.wr, err = os.OpenFile(this.config.StorePath, os.O_CREATE|os.O_RDWR, 0666)
+		writer.wr, err = os.OpenFile(writer.config.StorePath, os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
 			panic(fmt.Sprintf("打开日志文件失败,%s", err))
 		}
 	} else {
-		this.wr.Close()
-		bakName := this.config.StorePath + "." + strconv.FormatInt(time.Now().Unix(), 10)
-		err := os.Rename(this.config.StorePath, bakName)
+		writer.wr.Close()
+		bakName := writer.config.StorePath + "." + strconv.FormatInt(time.Now().Unix(), 10)
+		err := os.Rename(writer.config.StorePath, bakName)
 		if err != nil {
 			Error(fmt.Sprintf("循环备份老的日志文件失败:%s", err))
 		}
-		file, err := os.Create(this.config.StorePath)
+		file, err := os.Create(writer.config.StorePath)
 		if err != nil {
 			//日志创建失败直接让程序挂掉
 			println(fmt.Sprintf("创建日志文件失败:%s", err))
 			panic(fmt.Sprintf("创建日志文件失败:%s", err))
 		}
-		this.wr = file
-		go clearLog(this.config.StorePath, this.config.Rotate)
+		writer.wr = file
+		go clearLog(writer.config.StorePath, writer.config.Rotate)
 	}
 }
 
@@ -223,7 +230,7 @@ func clearLog(logPath string, rotateSize int) {
 func deforeRotateProcess(this *FileLogWriter) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("切割日志出错,%s", r)
+			log.Fatalf("切割日志出错,%s", r)
 			this.count = 0
 		}
 		this.count = 0
@@ -233,55 +240,55 @@ func deforeRotateProcess(this *FileLogWriter) {
 	this.config.RotatePolicy.RotateAfter()
 }
 
-//写入日志
-func (this *FileLogWriter) Write(p []byte) (nn int, err error) {
-	if this.config.RotatePolicy.CanRotate(this) {
-		deforeRotateProcess(this)
+//Write 写入日志
+func (writer *FileLogWriter) Write(p []byte) (nn int, err error) {
+	if writer.config.RotatePolicy.CanRotate(writer) {
+		deforeRotateProcess(writer)
 	}
-	for len(p) > (len(this.buf)-this.n) && this.err == nil {
+	for len(p) > (len(writer.buf)-writer.n) && writer.err == nil {
 		var n int
-		if this.n == 0 {
-			n, this.err = this.wr.Write(p)
+		if writer.n == 0 {
+			n, writer.err = writer.wr.Write(p)
 		} else {
-			n = copy(this.buf[this.n:], p)
-			this.n += n
-			this.Flush()
+			n = copy(writer.buf[writer.n:], p)
+			writer.n += n
+			writer.Flush()
 		}
 		nn += n
 		p = p[n:]
 	}
 	defer func() {
-		this.count += int64(nn)
+		writer.count += int64(nn)
 	}()
-	if this.err != nil {
-		return nn, this.err
+	if writer.err != nil {
+		return nn, writer.err
 	}
-	n := copy(this.buf[this.n:], p)
-	this.n += n
+	n := copy(writer.buf[writer.n:], p)
+	writer.n += n
 	nn += n
 	return nn, nil
 }
 
-//落盘操作
-func (this *FileLogWriter) Flush() error {
-	if this.err != nil {
-		return this.err
+//Flush 落盘操作
+func (writer *FileLogWriter) Flush() error {
+	if writer.err != nil {
+		return writer.err
 	}
-	if this.n == 0 {
+	if writer.n == 0 {
 		return nil
 	}
-	n, err := this.wr.Write(this.buf[0:this.n])
-	if n < this.n && err == nil {
+	n, err := writer.wr.Write(writer.buf[0:writer.n])
+	if n < writer.n && err == nil {
 		err = io.ErrShortWrite
 	}
 	if err != nil {
-		if n > 0 && n < this.n {
-			copy(this.buf[0:this.n-n], this.buf[n:this.n])
+		if n > 0 && n < writer.n {
+			copy(writer.buf[0:writer.n-n], writer.buf[n:writer.n])
 		}
-		this.n -= n
-		this.err = err
+		writer.n -= n
+		writer.err = err
 		return err
 	}
-	this.n = 0
+	writer.n = 0
 	return nil
 }
