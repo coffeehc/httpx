@@ -1,4 +1,4 @@
-package web
+package httpx
 
 import (
 	"crypto/tls"

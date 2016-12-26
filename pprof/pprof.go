@@ -4,18 +4,19 @@ package pprof
 import (
 	"net/http/pprof"
 
-	"github.com/coffeehc/web"
+	"github.com/coffeehc/httpx"
 )
 
-func RegeditPprof(server web.HttpServer) {
-	server.RegisterHttpHandlerFunc("/debug/pprof/{name}", web.GET, pprof.Index)
-	server.RegisterHttpHandlerFunc("/debug/pprof/{name}", web.POST, pprof.Index)
-	server.RegisterHttpHandlerFunc("/debug/pprof/cmdline", web.GET, pprof.Cmdline)
-	server.RegisterHttpHandlerFunc("/debug/pprof/cmdline", web.POST, pprof.Cmdline)
-	server.RegisterHttpHandlerFunc("/debug/pprof/profile", web.GET, pprof.Profile)
-	server.RegisterHttpHandlerFunc("/debug/pprof/profile", web.POST, pprof.Profile)
-	server.RegisterHttpHandlerFunc("/debug/pprof/symbol", web.GET, pprof.Symbol)
-	server.RegisterHttpHandlerFunc("/debug/pprof/symbol", web.POST, pprof.Symbol)
-	server.RegisterHttpHandlerFunc("/debug/pprof/trace", web.GET, pprof.Trace)
-	server.RegisterHttpHandlerFunc("/debug/pprof/trace", web.POST, pprof.Trace)
+//RegeditPprof register pprof to http server
+func RegeditPprof(server httpx.Server) {
+	server.RegisterHandlerFunc("/debug/pprof/{name}", httpx.GET, pprof.Index)
+	server.RegisterHandlerFunc("/debug/pprof/{name}", httpx.POST, pprof.Index)
+	server.RegisterHandlerFunc("/debug/pprof/cmdline", httpx.GET, pprof.Cmdline)
+	server.RegisterHandlerFunc("/debug/pprof/cmdline", httpx.POST, pprof.Cmdline)
+	server.RegisterHandlerFunc("/debug/pprof/profile", httpx.GET, pprof.Profile)
+	server.RegisterHandlerFunc("/debug/pprof/profile", httpx.POST, pprof.Profile)
+	server.RegisterHandlerFunc("/debug/pprof/symbol", httpx.GET, pprof.Symbol)
+	server.RegisterHandlerFunc("/debug/pprof/symbol", httpx.POST, pprof.Symbol)
+	server.RegisterHandlerFunc("/debug/pprof/trace", httpx.GET, pprof.Trace)
+	server.RegisterHandlerFunc("/debug/pprof/trace", httpx.POST, pprof.Trace)
 }

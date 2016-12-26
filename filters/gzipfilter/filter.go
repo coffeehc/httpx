@@ -2,13 +2,14 @@ package gzipfilter
 
 import (
 	"compress/gzip"
-	"github.com/coffeehc/web"
+	"github.com/coffeehc/httpx"
 	"io"
 	"net/http"
 	"strings"
 )
 
-func GZipFilter(reply web.Reply, chain web.FilterChain) {
+//GZipFilter the gzip support
+func GZipFilter(reply httpx.Reply, chain httpx.FilterChain) {
 	w := reply.GetResponseWriter()
 	r := reply.GetRequest()
 	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
