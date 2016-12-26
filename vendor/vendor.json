@@ -3,10 +3,22 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "5JkFxNLzrc+47lAn50mJTM3fkbU=",
+			"path": "github.com/coffeehc/commons",
+			"revision": "a007376d1b6aa368915b6370d83d07671ff43b8e",
+			"revisionTime": "2016-12-25T12:16:42Z"
+		},
+		{
 			"checksumSHA1": "3Tm0wLtovBa+B2cQiz/QUt4uSx8=",
 			"path": "github.com/coffeehc/logger",
 			"revision": "1bfb928bb35c7981cea7245b9c1f14f3a5f305d9",
 			"revisionTime": "2016-12-25T09:28:12Z"
+		},
+		{
+			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "8ee79997227bf9b34611aee7946ae64735e6fd93",
+			"revisionTime": "2016-11-17T03:31:26Z"
 		},
 		{
 			"checksumSHA1": "sKfYQurIIt+ldKDDF7TRbg9w20I=",
