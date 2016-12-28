@@ -20,9 +20,10 @@ package ffjson
 import (
 	"encoding/json"
 	"errors"
-	fflib "github.com/pquerna/ffjson/fflib/v1"
 	"io"
 	"reflect"
+	
+	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
 
 // This is a reusable encoder.

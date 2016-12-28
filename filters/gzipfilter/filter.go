@@ -2,10 +2,11 @@ package gzipfilter
 
 import (
 	"compress/gzip"
-	"github.com/coffeehc/httpx"
 	"io"
 	"net/http"
 	"strings"
+	
+	"github.com/coffeehc/httpx"
 )
 
 //GZipFilter the gzip support

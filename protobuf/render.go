@@ -2,9 +2,10 @@ package protobuf
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/coffeehc/httpx"
 	"github.com/golang/protobuf/proto"
-	"net/http"
 )
 
 var (

@@ -1,4 +1,3 @@
-// pprof
 package pprof
 
 import (

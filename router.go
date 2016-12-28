@@ -3,8 +3,9 @@ package httpx
 import (
 	"fmt"
 
-	"github.com/coffeehc/logger"
 	"strings"
+	
+	"github.com/coffeehc/logger"
 )
 
 const (

@@ -11,11 +11,12 @@ import (
 	"os"
 
 	"crypto/tls"
+	"log"
+
 	"github.com/coffeehc/commons"
 	"github.com/coffeehc/httpx"
 	"github.com/coffeehc/httpx/pprof"
 	"github.com/coffeehc/logger"
-	"log"
 )
 
 func main() {

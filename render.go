@@ -4,9 +4,10 @@ import (
 	"io"
 
 	"encoding/xml"
+	"net/http"
+
 	"github.com/coffeehc/logger"
 	"github.com/pquerna/ffjson/ffjson"
-	"net/http"
 )
 
 var (
