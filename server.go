@@ -63,10 +63,10 @@ func (s *_Server) Start() <-chan error {
 		TLSConfig:      conf.TLSConfig,
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
-		ErrorLog:       logger.CreatLoggerAdapter(logger.LoggerLevelError, "", "", os.Stdout),
+		ErrorLog:       logger.CreatLoggerAdapter(logger.LevelError, "", "", os.Stdout),
 	}
 	if conf.HTTPErrorLogout != nil {
-		server.ErrorLog = logger.CreatLoggerAdapter(logger.LoggerLevelError, "", "", conf.HTTPErrorLogout)
+		server.ErrorLog = logger.CreatLoggerAdapter(logger.LevelError, "", "", conf.HTTPErrorLogout)
 	}
 	s.httpServer = server
 	logger.Info("start HttpServer :%s", conf.getServerAddr())

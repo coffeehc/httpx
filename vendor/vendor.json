@@ -3,16 +3,16 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "5JkFxNLzrc+47lAn50mJTM3fkbU=",
+			"checksumSHA1": "BBV1TKzw6GE25JD3u0ZbQlJ5pko=",
 			"path": "github.com/coffeehc/commons",
-			"revision": "a007376d1b6aa368915b6370d83d07671ff43b8e",
-			"revisionTime": "2016-12-25T12:16:42Z"
+			"revision": "8c22dfa675a436aac8a8507d6be028cbb5a68b99",
+			"revisionTime": "2016-12-29T11:30:07Z"
 		},
 		{
-			"checksumSHA1": "3Tm0wLtovBa+B2cQiz/QUt4uSx8=",
+			"checksumSHA1": "GtPHHg9E72g5EFoR8m2eeCzRtwE=",
 			"path": "github.com/coffeehc/logger",
-			"revision": "1bfb928bb35c7981cea7245b9c1f14f3a5f305d9",
-			"revisionTime": "2016-12-25T09:28:12Z"
+			"revision": "9b3c2e6b4c40058a8eafdfba7c62d337953c1c42",
+			"revisionTime": "2016-12-28T13:58:47Z"
 		},
 		{
 			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
@@ -40,10 +40,10 @@
 		},
 		{
 			"checksumSHA1": "12GqsW8PiRPnezDDy0v4brZrndM=",
-			"origin": "github.com/coffeehc/logger/vendor/gopkg.in/yaml.v2",
+			"origin": "github.com/coffeehc/commons/vendor/gopkg.in/yaml.v2",
 			"path": "gopkg.in/yaml.v2",
-			"revision": "1bfb928bb35c7981cea7245b9c1f14f3a5f305d9",
-			"revisionTime": "2016-12-25T09:28:12Z"
+			"revision": "8c22dfa675a436aac8a8507d6be028cbb5a68b99",
+			"revisionTime": "2016-12-29T11:30:07Z"
 		}
 	],
 	"rootPath": "github.com/coffeehc/httpx"

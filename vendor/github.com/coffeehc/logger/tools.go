@@ -2,7 +2,7 @@ package logger
 
 import "flag"
 
-var flagLoggerLevel = flag.String("logger_level", LoggerDefaultLevel, "默认日志级别")
+var flagLoggerLevel = flag.String("logger_level", DefaultLevel, "默认日志级别")
 
 // InitLogger 初始化日志
 func InitLogger() {

@@ -58,16 +58,16 @@ func getLevel(level string) Level {
 	level = strings.ToLower(level)
 	switch level {
 	case "trace":
-		return LoggerLevelTrace
+		return LevelTrace
 	case "debug":
-		return LoggerLevelDebug
+		return LevelDebug
 	case "info":
-		return LoggerLevelInfo
+		return LevelInfo
 	case "warn":
-		return LoggerLevelWarn
+		return LevelWarn
 	case "error":
-		return LoggerLevelError
+		return LevelError
 	default:
-		return LoggerLevelDebug
+		return LevelDebug
 	}
 }

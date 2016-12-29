@@ -53,7 +53,7 @@ var defaultConfig = &Config{
 	Context: "Default",
 	Appenders: []*Appender{
 		&Appender{
-			Level:       LoggerDefaultLevel,
+			Level:       DefaultLevel,
 			PackagePath: "/",
 			Adapter:     AdapterConsole,
 		},

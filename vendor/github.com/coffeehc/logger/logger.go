@@ -39,69 +39,69 @@ type _logger struct {
 }
 
 func (*_logger) Trace(format string, v ...interface{}) string {
-	return output(LoggerLevelTrace, fmt.Sprintf(format, v...), 3)
+	return output(LevelTrace, fmt.Sprintf(format, v...), 3)
 }
 
 func (*_logger) Debug(format string, v ...interface{}) string {
-	return output(LoggerLevelDebug, fmt.Sprintf(format, v...), 3)
+	return output(LevelDebug, fmt.Sprintf(format, v...), 3)
 }
 
 func (*_logger) Info(format string, v ...interface{}) string {
-	return output(LoggerLevelInfo, fmt.Sprintf(format, v...), 3)
+	return output(LevelInfo, fmt.Sprintf(format, v...), 3)
 }
 
 func (*_logger) Warn(format string, v ...interface{}) string {
-	return output(LoggerLevelWarn, fmt.Sprintf(format, v...), 3)
+	return output(LevelWarn, fmt.Sprintf(format, v...), 3)
 }
 
 func (*_logger) Error(format string, v ...interface{}) string {
-	return output(LoggerLevelError, fmt.Sprintf(format, v...), 3)
+	return output(LevelError, fmt.Sprintf(format, v...), 3)
 }
 
 var (
-	//LoggerDefaultLevel 默认的日志级别
-	LoggerDefaultLevel = "error"
-	//LoggerDefaultBufsize 日志缓冲区默认大小
-	LoggerDefaultBufsize = 1024
-	//LoggerDefaultTimeout 默认超时时间
-	LoggerDefaultTimeout = time.Second * 1
+	//DefaultLevel 默认的日志级别
+	DefaultLevel = "error"
+	//DefaultBufsize 日志缓冲区默认大小
+	DefaultBufsize = 1024
+	//DefaultTimeout 默认超时时间
+	DefaultTimeout = time.Second * 1
 )
 
 // Level 日志级别
 type Level byte
 
 const (
-	// LoggerLevelError  Error level
-	LoggerLevelError Level = 1 << 0
-	// LoggerLevelWarn Warn level
-	LoggerLevelWarn Level = 1<<1 | LoggerLevelError
-	//LoggerLevelInfo Info level
-	LoggerLevelInfo Level = 1<<2 | LoggerLevelWarn
-	// LoggerLevelDebug Debug level
-	LoggerLevelDebug Level = 1<<3 | LoggerLevelInfo
-	// LoggerLevelTrace Trace level
-	LoggerLevelTrace Level = 1<<4 | LoggerLevelDebug
+	// LevelError  Error level
+	LevelError Level = 1 << 0
+	// LevelWarn Warn level
+	LevelWarn Level = 1<<1 | LevelError
+	//LevelInfo Info level
+	LevelInfo Level = 1<<2 | LevelWarn
+	// LevelDebug Debug level
+	LevelDebug Level = 1<<3 | LevelInfo
+	// LevelTrace Trace level
+	LevelTrace Level = 1<<4 | LevelDebug
 
-	// LoggerTimeformatSecond 显示格式为2006-01-02 15:04:05
-	LoggerTimeformatSecond string = "2006-01-02 15:04:05"
-	// LoggerTimeformatNanosecond 显示格式为2006-01-02 15:04:05.999999999
-	LoggerTimeformatNanosecond string = "2006-01-02 15:04:05.999999999"
-	// LoggerTimeformatAll 显示格式为2006-01-02 15:04:05.999999999 -0700 UTC
-	LoggerTimeformatAll string = "2006-01-02 15:04:05.999999999 -0700 UTC"
-	loggerCodeDepth     int    = 2
+	// FromatTimeSecond 显示格式为2006-01-02 15:04:05
+	FromatTimeSecond string = "2006-01-02 15:04:05"
+	// FormatTimeNanosecond 显示格式为2006-01-02 15:04:05.999999999
+	FormatTimeNanosecond string = "2006-01-02 15:04:05.999999999"
+	// FormatTimeAll 显示格式为2006-01-02 15:04:05.999999999 -0700 UTC
+	FormatTimeAll   string = "2006-01-02 15:04:05.999999999 -0700 UTC"
+	loggerCodeDepth int    = 2
 )
 
 func getLevelStr(level Level) string {
 	switch level {
-	case LoggerLevelError:
+	case LevelError:
 		return "ERROR"
-	case LoggerLevelWarn:
+	case LevelWarn:
 		return "WARN"
-	case LoggerLevelInfo:
+	case LevelInfo:
 		return "INFO"
-	case LoggerLevelDebug:
+	case LevelDebug:
 		return "DEBUG"
-	case LoggerLevelTrace:
+	case LevelTrace:
 		return "TRACE"
 	default:
 		return "DEBUG"
@@ -222,13 +222,13 @@ func AddFileter(level Level, path string, timeFormat string, format string, out 
 
 func newFilter(level Level, path string, timeFormat string, format string, out io.Writer) *logFilter {
 	if timeFormat == "" {
-		timeFormat = LoggerTimeformatSecond
+		timeFormat = FromatTimeSecond
 	}
 	if path == "" {
 		path = "/"
 	}
 	if timeFormat == "" {
-		timeFormat = LoggerTimeformatSecond
+		timeFormat = FromatTimeSecond
 	}
 	if format == "" {
 		format = "%T %L %C %M"
@@ -338,25 +338,25 @@ func Printf(logLevel Level, codeLevel int, format string, v ...interface{}) stri
 
 //Trace print trace log
 func Trace(format string, v ...interface{}) string {
-	return output(LoggerLevelTrace, fmt.Sprintf(format, v...), loggerCodeDepth)
+	return output(LevelTrace, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
 //Debug print debug log
 func Debug(format string, v ...interface{}) string {
-	return output(LoggerLevelDebug, fmt.Sprintf(format, v...), loggerCodeDepth)
+	return output(LevelDebug, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
 //Info print Info log
 func Info(format string, v ...interface{}) string {
-	return output(LoggerLevelInfo, fmt.Sprintf(format, v...), loggerCodeDepth)
+	return output(LevelInfo, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
 //Warn print Warn log
 func Warn(format string, v ...interface{}) string {
-	return output(LoggerLevelWarn, fmt.Sprintf(format, v...), loggerCodeDepth)
+	return output(LevelWarn, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
 
 // Error print Error log
 func Error(format string, v ...interface{}) string {
-	return output(LoggerLevelError, fmt.Sprintf(format, v...), loggerCodeDepth)
+	return output(LevelError, fmt.Sprintf(format, v...), loggerCodeDepth)
 }
