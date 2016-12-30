@@ -32,7 +32,7 @@ func newRouter() *router {
 					var httpErr *HTTPError
 					var ok bool
 					if httpErr, ok = err.(*HTTPError); !ok {
-						httpErr = NewHTTPErr(500, fmt.Sprintf("%#s", err))
+						httpErr = NewHTTPErr(500, fmt.Sprintf("%s", err))
 					}
 					reply.SetStatusCode(httpErr.Code)
 					if handler, ok := _router.errorHandlers[httpErr.Code]; ok {
