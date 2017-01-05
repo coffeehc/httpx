@@ -35,8 +35,8 @@ func (waiter *internalWaiter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-//CreatLoggerAdapter 创建 *log.Logger 的适配器
-func CreatLoggerAdapter(level Level, timeFormat string, format string, out io.Writer) *log.Logger {
+//CreateLoggerAdapter 创建 *log.Logger 的适配器
+func CreateLoggerAdapter(level Level, timeFormat string, format string, out io.Writer) *log.Logger {
 	filter := newFilter(level, "/", timeFormat, format, out)
 	go filter.run()
 	return log.New(&internalWaiter{filter}, "", 0)

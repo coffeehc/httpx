@@ -205,7 +205,7 @@ func init() {
 }
 
 func addStdOutFilter(level Level, path string, timeFormat string, format string) {
-	AddFileter(level, path, timeFormat, format, os.Stdout)
+	AddFilter(level, path, timeFormat, format, os.Stdout)
 }
 
 //ClearFilter 清空过滤器,主要用于自定义处理日志
@@ -213,8 +213,8 @@ func ClearFilter() {
 	filters = make([]*logFilter, 0)
 }
 
-//AddFileter 添加日志过滤器,参数说明:级别,包路径,时间格式,Writer接口
-func AddFileter(level Level, path string, timeFormat string, format string, out io.Writer) {
+//AddFilter 添加日志过滤器,参数说明:级别,包路径,时间格式,Writer接口
+func AddFilter(level Level, path string, timeFormat string, format string, out io.Writer) {
 	filter := newFilter(level, path, timeFormat, format, out)
 	filters = append(filters, filter)
 	go filter.run()

@@ -127,7 +127,7 @@ func addFileFilter(conf *FileLogConfig) {
 	conf.writer.config = conf
 	conf.writer.count = 0
 	conf.writer.Rotate()
-	AddFileter(conf.Level, conf.Path, conf.Timeformat, conf.Format, conf.writer)
+	AddFilter(conf.Level, conf.Path, conf.Timeformat, conf.Format, conf.writer)
 }
 
 func addFileFilterForDefualt(level Level, path string, logPath string, timeFormat string, format string) {
