@@ -9,8 +9,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"os"
-	
+
+	"context"
 	"github.com/coffeehc/logger"
+	"time"
 )
 
 //Server the http server interface
@@ -45,9 +47,9 @@ func NewServer(serverConfig *Config) Server {
 }
 
 func (s *_Server) Stop() {
-	if s.listener != nil {
-		logger.Info("http Listener Close")
-		s.listener.Close()
+	if s.httpServer != nil {
+		ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+		s.httpServer.Shutdown(ctx)
 	}
 }
 
@@ -64,6 +66,7 @@ func (s *_Server) Start() <-chan error {
 		TLSNextProto:   conf.TLSNextProto,
 		ConnState:      conf.ConnState,
 		ErrorLog:       logger.CreateLoggerAdapter(logger.LevelError, "", "", os.Stdout),
+		IdleTimeout:    conf.getIdleTimeout(),
 	}
 	if conf.HTTPErrorLogout != nil {
 		server.ErrorLog = logger.CreateLoggerAdapter(logger.LevelError, "", "", conf.HTTPErrorLogout)

@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	
+
 	"github.com/coffeehc/httpx"
 )
 
