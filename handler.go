@@ -92,8 +92,16 @@ func (list requestHandlerList) Len() int {
 	return len(list)
 }
 func (list requestHandlerList) Less(i, j int) bool {
-	uri1s := strings.Split(list[i].exp.String(), pathSeparator)
-	uri2s := strings.Split(list[j].exp.String(), pathSeparator)
+	h1 := list[i]
+	h2 := list[j]
+	if !h1.hasPathFragments && h2.hasPathFragments {
+		return true
+	}
+	if !h2.hasPathFragments && h1.hasPathFragments {
+		return false
+	}
+	uri1s := strings.Split(h1.exp.String(), pathSeparator)
+	uri2s := strings.Split(h2.exp.String(), pathSeparator)
 	if len(uri1s) != len(uri2s) {
 		return len(uri1s) > len(uri2s)
 	}
