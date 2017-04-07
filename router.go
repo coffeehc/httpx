@@ -65,12 +65,11 @@ func (r *router) handle(reply Reply) {
 	request := reply.GetRequest()
 	request.ParseForm()
 	request.URL.Path = strings.Replace(request.URL.Path, "//", "/", -1)
-	path := request.RequestURI
 	method := RequestMethod(strings.ToUpper(request.Method))
-	handler := r.matcher.getActionHandler(path, method)
+	handler := r.matcher.getActionHandler(request.URL.Path, method)
 	if handler == nil {
 		reply.SetStatusCode(404).With(NewHTTPErr(404, "you are lost")).As(DefaultRenderJSON)
-		logger.Error("Not found Handler for[%s] [%s]", method, path)
+		logger.Error("Not found Handler for[%s] [%s]", method, request.URL.Path)
 		return
 	}
 	handler.doAction(reply)

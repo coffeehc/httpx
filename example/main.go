@@ -2,16 +2,17 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
-	"net/http"
-	"strings"
-	"time"
-
-	"os"
-
-	"crypto/tls"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
+	"os"
+	"runtime"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/coffeehc/commons"
 	"github.com/coffeehc/httpx"
@@ -20,6 +21,22 @@ import (
 )
 
 func main() {
+	var mu sync.Mutex
+	var items = make(map[int]struct{})
+
+	runtime.SetMutexProfileFraction(5)
+	for i := 0; i < 1000*1000; i++ {
+		go func(i int) {
+			mu.Lock()
+			defer mu.Unlock()
+			items[i] = struct{}{}
+		}(i)
+	}
+
+	http.ListenAndServe(":8888", nil)
+}
+
+func main1() {
 	logger.InitLogger()
 	defer logger.WaitToClose()
 	cert, err := tls.LoadX509KeyPair("server.crt", "server.key")
