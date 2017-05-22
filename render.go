@@ -1,10 +1,12 @@
 package httpx
 
 import (
-	"io"
-
+	"bytes"
 	"encoding/xml"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/coffeehc/logger"
 	"github.com/pquerna/ffjson/ffjson"
@@ -25,39 +27,35 @@ var (
 //Render 渲染器接口
 type Render interface {
 	ContentType() string
-	Write(w http.ResponseWriter, data interface{}) error
+	Render(data interface{}) (io.ReadCloser, error)
 }
 
-func renderReply(w http.ResponseWriter, render Render, data interface{}) error {
+func renderReply(w http.ResponseWriter, render Render, data interface{}) (io.ReadCloser, error) {
 	contentType := render.ContentType()
 	if contentType == "" {
 		contentType = "text/plain"
 	}
 	w.Header().Set("content-type", contentType)
-	return render.Write(w, data)
+	return render.Render(data)
 
 }
 
-func writeBody(w io.Writer, data interface{}) error {
-	var err error
+func toReadCloser(data interface{}) io.ReadCloser {
 	switch v := data.(type) {
 	case string:
-		_, err = w.Write([]byte(v))
+		return ioutil.NopCloser(strings.NewReader(v))
 	case *string:
-		_, err = w.Write([]byte(*v))
+		return ioutil.NopCloser(strings.NewReader(*v))
 	case []byte:
-		_, err = w.Write(v)
+		return ioutil.NopCloser(bytes.NewReader(v))
+	case io.ReadCloser:
+		return v
 	case io.Reader:
-		_, err = io.Copy(w, v)
-		defer func() {
-			if closer, ok := v.(io.Closer); ok {
-				closer.Close()
-			}
-		}()
-	case nil:
-		logger.Warn("不返回任何信息")
+		return ioutil.NopCloser(v)
+	default:
+		logger.Error("无法解析的数据类型,%#v", data)
 	}
-	return err
+	return ioutil.NopCloser(bytes.NewReader([]byte{}))
 }
 
 //RenderJSON json格式的渲染器
@@ -71,12 +69,12 @@ func (render RenderJSON) ContentType() string {
 }
 
 //Write implement Render func
-func (render RenderJSON) Write(w http.ResponseWriter, data interface{}) error {
+func (render RenderJSON) Render(data interface{}) (io.ReadCloser, error) {
 	v, err := ffjson.Marshal(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return writeBody(w, v)
+	return toReadCloser(v), nil
 }
 
 //RenderText text格式的渲染器
@@ -90,8 +88,8 @@ func (render RenderText) ContentType() string {
 }
 
 //Write implement Render func
-func (render RenderText) Write(w http.ResponseWriter, data interface{}) error {
-	return writeBody(w, data)
+func (render RenderText) Render(data interface{}) (io.ReadCloser, error) {
+	return toReadCloser(data), nil
 }
 
 //RenderXML xml格式的渲染器
@@ -105,11 +103,10 @@ func (render RenderXML) ContentType() string {
 }
 
 //Write implement Render func
-func (render RenderXML) Write(w http.ResponseWriter, data interface{}) error {
-	w.Header().Set("content-type", "application/xml; charset="+render.Charset)
+func (render RenderXML) Render(data interface{}) (io.ReadCloser, error) {
 	v, err := xml.Marshal(data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return writeBody(w, v)
+	return toReadCloser(v), nil
 }

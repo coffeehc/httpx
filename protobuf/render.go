@@ -2,7 +2,11 @@ package protobuf
 
 import (
 	"errors"
-	"net/http"
+	"io"
+
+	"bytes"
+
+	"io/ioutil"
 
 	"github.com/coffeehc/httpx"
 	"github.com/golang/protobuf/proto"
@@ -23,14 +27,13 @@ func (render RenderProtobuf) ContentType() string {
 }
 
 //Write implement httpx.Render interface
-func (render RenderProtobuf) Write(w http.ResponseWriter, data interface{}) error {
+func (render RenderProtobuf) Render(data interface{}) (io.ReadCloser, error) {
 	if message, ok := data.(proto.Message); ok {
 		data, err := proto.Marshal(message)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		_, err = w.Write(data)
-		return err
+		return ioutil.NopCloser(bytes.NewBuffer(data)), nil
 	}
-	return errors.New("data type is not proto.Message")
+	return nil, errors.New("data type is not proto.Message")
 }

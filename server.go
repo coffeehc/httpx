@@ -11,8 +11,9 @@ import (
 	"os"
 
 	"context"
-	"github.com/coffeehc/logger"
 	"time"
+
+	"github.com/coffeehc/logger"
 )
 
 //Server the http server interface
@@ -106,6 +107,7 @@ func (s *_Server) serverHandler(responseWriter http.ResponseWriter, request *htt
 			if httpErr, ok = err.(*HTTPError); !ok {
 				httpErr = NewHTTPErr(500, fmt.Sprintf("%s", err))
 			}
+			logger.Error("http err is %s", err)
 			reply.SetStatusCode(httpErr.Code)
 			if handler, ok := s.router.errorHandlers[httpErr.Code]; ok {
 				handler(httpErr, reply)

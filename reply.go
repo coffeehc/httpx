@@ -3,7 +3,7 @@ package httpx
 import (
 	"net/http"
 
-	"fmt"
+	"io"
 
 	"github.com/coffeehc/logger"
 )
@@ -140,12 +140,18 @@ func (reply *httpReply) finishReply() {
 	if reply.data == nil {
 		reply.data = ""
 	}
-	err := renderReply(reply.GetResponseWriter(), reply.render, reply.data)
+	reader, err := reply.render.Render(reply.data)
 	if err != nil {
 		reply.SetStatusCode(500)
-		logger.Error("render error %#v", err)
-		renderReply(reply.GetResponseWriter(), DefaultRenderText, fmt.Sprintf("render error :%s", err))
+		reader, _ = DefaultRenderText.Render(logger.Error("render error %#v", err))
 	}
+	if reader == nil {
+		logger.Error("渲染结果为空")
+		return
+	}
+	reply.responseWriter.WriteHeader(reply.GetStatusCode())
+	io.Copy(reply.responseWriter, reader)
+	reader.Close()
 }
 
 func (reply *httpReply) writeWarpHeader() {

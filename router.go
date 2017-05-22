@@ -34,6 +34,7 @@ func newRouter() *router {
 					if httpErr, ok = err.(*HTTPError); !ok {
 						httpErr = NewHTTPErr(500, fmt.Sprintf("%s", err))
 					}
+					logger.Error("http err is %s", err)
 					reply.SetStatusCode(httpErr.Code)
 					if handler, ok := _router.errorHandlers[httpErr.Code]; ok {
 						handler(httpErr, reply)
