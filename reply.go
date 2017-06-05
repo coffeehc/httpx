@@ -1,9 +1,9 @@
 package httpx
 
 import (
-	"net/http"
-
+	"context"
 	"io"
+	"net/http"
 
 	"github.com/coffeehc/logger"
 )
@@ -30,6 +30,8 @@ type Reply interface {
 	AdapterHTTPHandler(adapter bool)
 	//包装一层ResponseWriter,如 Gzip
 	WarpResponseWriter(http.ResponseWriter)
+	GetContext() context.Context
+	SetContext(key string, value interface{})
 }
 
 type httpReply struct {
@@ -42,6 +44,7 @@ type httpReply struct {
 	responseWriter     http.ResponseWriter
 	adapterHTTPHandler bool
 	pathFragment       PathFragment
+	cxt                context.Context
 }
 
 func newHTTPReply(request *http.Request, w http.ResponseWriter, config *Config) *httpReply {
@@ -52,7 +55,17 @@ func newHTTPReply(request *http.Request, w http.ResponseWriter, config *Config) 
 		request:        request,
 		responseWriter: w,
 		header:         w.Header(),
+		cxt:            config.GetRootContext(),
 	}
+}
+
+func (reply *httpReply) GetContext() context.Context {
+	reply.request.Context()
+	return reply.cxt
+}
+func (reply *httpReply) SetContext(key string, value interface{}) {
+	reply.cxt = context.WithValue(reply.cxt, key, value)
+
 }
 
 func (reply *httpReply) AdapterHTTPHandler(adapter bool) {

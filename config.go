@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"crypto/tls"
 	"io"
 	"net"
@@ -21,6 +22,7 @@ type Config struct {
 	DefaultRender     Render
 	KeepAliveDuration time.Duration `json:"keep_alive_duration" yaml:"keep_alive_duration"`
 	IdleTimeout       time.Duration `json:"idle_timeout" yaml:"idle_timeout"`
+	RootContext       context.Context
 }
 
 func (config *Config) getKeepAliveDuration() time.Duration {
@@ -71,4 +73,11 @@ func (config *Config) getIdleTimeout() time.Duration {
 		config.IdleTimeout = 0
 	}
 	return config.IdleTimeout * time.Second
+}
+
+func (config *Config) GetRootContext() context.Context {
+	if config.RootContext == nil {
+		config.RootContext = context.Background()
+	}
+	return config.RootContext
 }
