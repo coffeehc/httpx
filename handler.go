@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"net/url"
+
 	"github.com/coffeehc/logger"
 )
 
@@ -26,7 +28,13 @@ type requestHandler struct {
 func (handler *requestHandler) doAction(reply Reply) {
 	requestURI := reply.GetRequest().RequestURI
 	if handler.hasPathFragments {
-		paths := strings.Split(requestURI, pathSeparator)
+		u, err := url.ParseRequestURI(requestURI)
+		if err != nil {
+			logger.Error("错误的uri:%s", requestURI)
+			reply.SetStatusCode(500)
+			return
+		}
+		paths := strings.Split(u.Path, pathSeparator)
 		if handler.pathSize != len(paths) {
 			panic(errors.New(logger.Error("需要解析的uri[%s]不匹配定义的uri[%s]", requestURI, handler.defineURI)))
 		}
@@ -49,7 +57,11 @@ func buildRequestHandler(path string, method RequestMethod, requestHandlerFunc R
 	if !strings.HasPrefix(path, pathSeparator) {
 		return nil, errors.New(logger.Error("定义的Uri必须是%s前缀", pathSeparator))
 	}
-	paths := strings.Split(path, pathSeparator)
+	u, err := url.ParseRequestURI(path)
+	if err != nil {
+		return nil, errors.New("url格式错误")
+	}
+	paths := strings.Split(u.Path, pathSeparator)
 	uriConversions := make(map[string]int, 0)
 	conversionURI := ""
 	pathSize := 0
