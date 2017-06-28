@@ -170,7 +170,7 @@ func (reply *httpReply) finishReply() {
 func (reply *httpReply) writeWarpHeader() {
 	header := reply.Header()
 	for _, cookie := range reply.cookies {
-		header.Set("Set-Cookie", cookie.String())
+		header.Add("Set-Cookie", cookie.String())
 	}
 }
 
