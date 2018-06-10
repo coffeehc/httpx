@@ -3,7 +3,7 @@ package pprof
 import (
 	"net/http/pprof"
 
-	"github.com/coffeehc/httpx"
+	"git.xiagaogao.com/coffee/httpx"
 )
 
 //RegeditPprof register pprof to http server

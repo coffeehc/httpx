@@ -1,10 +1,12 @@
 package httpx
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/coffeehc/logger"
+	"git.xiagaogao.com/coffee/boot/logs"
+	"go.uber.org/zap"
 )
 
 //URIPatternMatcher a URI matcher interface
@@ -17,7 +19,7 @@ type servletStyleURIPatternMatcher struct {
 	patternKind int //0:PREFIX 1:SUFFIX 2:LITERAL
 }
 
-func newServletStyleURIPatternMatcher(uriPattern string) URIPatternMatcher {
+func newServletStyleURIPatternMatcher(uriPattern string,logger *zap.Logger) URIPatternMatcher {
 	matcher := new(servletStyleURIPatternMatcher)
 	if strings.HasPrefix(uriPattern, "*") {
 		matcher.pattern = string([]byte(uriPattern)[1:])
@@ -49,12 +51,12 @@ type regexURIPatternMatcher struct {
 	pattern *regexp.Regexp
 }
 
-func newRegexURIPatternMatcher(uriPattern string) URIPatternMatcher {
+func newRegexURIPatternMatcher(uriPattern string,logger *zap.Logger) URIPatternMatcher {
 	matcher := new(regexURIPatternMatcher)
 	var err error
 	matcher.pattern, err = regexp.Compile(uriPattern)
 	if err != nil {
-		logger.Error("编译正则表达式[%s]异常,%s", uriPattern, err)
+		logger.Error(fmt.Sprintf("编译正则表达式[%s]异常", uriPattern), logs.F_Error(err))
 		return nil
 	}
 	return URIPatternMatcher(matcher)

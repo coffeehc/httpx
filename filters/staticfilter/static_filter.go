@@ -3,7 +3,7 @@ package staticfilter
 import (
 	"net/http"
 
-	"github.com/coffeehc/httpx"
+	"git.xiagaogao.com/coffee/httpx"
 )
 
 //RegisterStaticFilter register a static file handler to http server

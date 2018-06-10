@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/coffeehc/httpx"
+	"git.xiagaogao.com/coffee/httpx"
 )
 
 //GZipFilter the gzip support

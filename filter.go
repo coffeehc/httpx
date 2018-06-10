@@ -1,9 +1,11 @@
 package httpx
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/coffeehc/logger"
+	"git.xiagaogao.com/coffee/boot/errors"
+	"go.uber.org/zap"
 )
 
 //Filter 定义实现 Filter 需要实现的方法类型
@@ -17,10 +19,12 @@ type filterWarp struct {
 	requestFilter   Filter
 	nextFilter      *filterWarp
 	filterChainFunc FilterChain
+	errorService errors.Service
+	logger *zap.Logger
 }
 
-func newFilterWarp(matcher URIPatternMatcher, actionFilter Filter) *filterWarp {
-	return &filterWarp{matcher: matcher, requestFilter: actionFilter}
+func newFilterWarp(matcher URIPatternMatcher, actionFilter Filter,errorService errors.Service, logger *zap.Logger) *filterWarp {
+	return &filterWarp{matcher: matcher, requestFilter: actionFilter,errorService:errorService,logger:logger}
 }
 
 func (warp *filterWarp) addNextFilter(filter *filterWarp) {
@@ -50,19 +54,20 @@ func (warp *filterWarp) filterChain(reply Reply) {
 	warp.nextFilter.doFilter(reply)
 }
 
-//AccessLogFilter 访问日志的 Filter, 在 consol 上输出每个被访问的 url 及响应时间
-func AccessLogFilter(reply Reply, chain FilterChain) {
-	t1 := time.Now()
-	defer func() {
-		printAccessLog(t1, reply)
-		if err := recover(); err != nil {
-			panic(err)
-		}
-	}()
-	chain(reply)
+func NewAccessLogFilter(errorService errors.Service, logger *zap.Logger) Filter {
+	return func(reply Reply, chain FilterChain) {
+		t1 := time.Now()
+		defer func() {
+			printAccessLog(t1, reply,errorService,logger)
+			if err := recover(); err != nil {
+				panic(err)
+			}
+		}()
+		chain(reply)
+	}
 }
 
-func printAccessLog(startTime time.Time, reply Reply) {
+func printAccessLog(startTime time.Time, reply Reply,errorService errors.Service, logger *zap.Logger) {
 	request := reply.GetRequest()
-	logger.Info("%s\t%s\t%s\t%d", time.Since(startTime), request.RemoteAddr, request.URL.RequestURI(), reply.GetStatusCode())
+	logger.Info(fmt.Sprintf("%s\t%s\t%s\t%d", time.Since(startTime), request.RemoteAddr, request.URL.RequestURI(), reply.GetStatusCode()))
 }

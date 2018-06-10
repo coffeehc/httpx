@@ -8,7 +8,7 @@ import (
 
 	"io/ioutil"
 
-	"github.com/coffeehc/httpx"
+	"git.xiagaogao.com/coffee/httpx"
 	"github.com/golang/protobuf/proto"
 )
 

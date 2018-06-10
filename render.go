@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/coffeehc/logger"
+	"git.xiagaogao.com/coffee/boot/logs"
 	"github.com/pquerna/ffjson/ffjson"
+	"go.uber.org/zap"
 )
 
 var (
@@ -40,7 +41,7 @@ func renderReply(w http.ResponseWriter, render Render, data interface{}) (io.Rea
 
 }
 
-func toReadCloser(data interface{}) io.ReadCloser {
+func toReadCloser(data interface{},logger *zap.Logger) io.ReadCloser {
 	switch v := data.(type) {
 	case string:
 		return ioutil.NopCloser(strings.NewReader(v))
@@ -53,7 +54,7 @@ func toReadCloser(data interface{}) io.ReadCloser {
 	case io.Reader:
 		return ioutil.NopCloser(v)
 	default:
-		logger.Error("无法解析的数据类型,%#v", data)
+		logger.Error("无法解析的数据类型", logs.F_ExtendData(data))
 	}
 	return ioutil.NopCloser(bytes.NewReader([]byte{}))
 }
@@ -61,6 +62,7 @@ func toReadCloser(data interface{}) io.ReadCloser {
 //RenderJSON json格式的渲染器
 type RenderJSON struct {
 	Charset string
+	logger *zap.Logger
 }
 
 //ContentType implement Render func
@@ -74,12 +76,13 @@ func (render RenderJSON) Render(data interface{}) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	return toReadCloser(v), nil
+	return toReadCloser(v,render.logger), nil
 }
 
 //RenderText text格式的渲染器
 type RenderText struct {
 	Charset string
+	logger *zap.Logger
 }
 
 //ContentType implement Render func
@@ -89,12 +92,13 @@ func (render RenderText) ContentType() string {
 
 //Write implement Render func
 func (render RenderText) Render(data interface{}) (io.ReadCloser, error) {
-	return toReadCloser(data), nil
+	return toReadCloser(data,render.logger), nil
 }
 
 //RenderXML xml格式的渲染器
 type RenderXML struct {
 	Charset string
+	logger *zap.Logger
 }
 
 //ContentType implement Render func
@@ -108,5 +112,5 @@ func (render RenderXML) Render(data interface{}) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	return toReadCloser(v), nil
+	return toReadCloser(v,render.logger), nil
 }

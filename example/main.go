@@ -14,13 +14,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coffeehc/commons"
-	"github.com/coffeehc/httpx"
-	"github.com/coffeehc/httpx/pprof"
-	"github.com/coffeehc/logger"
+	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/logs"
+	"git.xiagaogao.com/coffee/commons"
+	"git.xiagaogao.com/coffee/httpx"
+	"git.xiagaogao.com/coffee/httpx/pprof"
+	"go.uber.org/zap"
 )
 
-func main() {
+var logger,_ = zap.NewDevelopment()
+var errorService =errors.NewService("test")
+
+func main1() {
 	var mu sync.Mutex
 	var items = make(map[int]struct{})
 
@@ -36,9 +41,7 @@ func main() {
 	http.ListenAndServe(":8888", nil)
 }
 
-func main1() {
-	logger.InitLogger()
-	defer logger.WaitToClose()
+func main() {
 	cert, err := tls.LoadX509KeyPair("server.crt", "server.key")
 	if err != nil {
 		log.Fatalf("load cert err %s", err)
@@ -47,13 +50,13 @@ func main1() {
 		TLSConfig:       &tls.Config{Certificates: []tls.Certificate{cert}},
 		HTTPErrorLogout: os.Stderr,
 	}
-	server := httpx.NewServer(config)
+	server := httpx.NewServer(config,errorService,logger)
 	pprof.RegeditPprof(server)
 	server.Register("/test", httpx.GET, TestService)
 	server.Register("/reqinfo", httpx.GET, reqInfoHandler)
 	server.Register("/a/{name}/123", httpx.GET, Service)
 	server.Register("/a", httpx.GET, getStruct)
-	server.AddFirstFilter("/*", httpx.AccessLogFilter)
+	server.AddFirstFilter("/*", httpx.NewAccessLogFilter(errorService,logger))
 	errSign := server.Start()
 	go func() {
 		err := <-errSign
@@ -81,6 +84,7 @@ func getStruct(reply httpx.Reply) {
 		return
 	}
 	reply.With(test).As(httpx.DefaultRenderJSON)
+
 }
 
 func reqInfoHandler(reply httpx.Reply) {
@@ -97,6 +101,7 @@ func reqInfoHandler(reply httpx.Reply) {
 	fmt.Fprintf(stream, "TLS: %#v\n", request.TLS)
 	fmt.Fprintf(stream, "\nHeaders:\n")
 	reply.With(stream).As(httpx.DefaultRenderText)
+
 }
 
 //Service Service
@@ -108,6 +113,7 @@ func Service(reply httpx.Reply) {
 	}
 	reply.With("123" + name)
 	panic("123")
+
 }
 
 //TestService test Service
@@ -124,7 +130,7 @@ func TestService(reply httpx.Reply) {
 		select {
 		case <-ticker.C:
 		case <-clientGone:
-			logger.Info("Client %v disconnected from the clock", reply.GetRequest().RemoteAddr)
+			logger.Info("Client disconnected from the clock", logs.F_ExtendData(reply.GetRequest().RemoteAddr))
 			return
 		}
 	}

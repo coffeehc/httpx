@@ -5,7 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/coffeehc/logger"
+	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/logs"
+	"go.uber.org/zap"
 )
 
 //Reply a wapper for http requese and response
@@ -45,9 +47,11 @@ type httpReply struct {
 	adapterHTTPHandler bool
 	pathFragment       PathFragment
 	cxt                context.Context
+	errorService errors.Service
+	logger *zap.Logger
 }
 
-func newHTTPReply(request *http.Request, w http.ResponseWriter, config *Config) *httpReply {
+func newHTTPReply(request *http.Request, w http.ResponseWriter, config *Config,errorService errors.Service,logger *zap.Logger) *httpReply {
 	return &httpReply{
 		statusCode:     200,
 		render:         config.getDefaultRender(),
@@ -56,6 +60,8 @@ func newHTTPReply(request *http.Request, w http.ResponseWriter, config *Config) 
 		responseWriter: w,
 		header:         w.Header(),
 		cxt:            config.GetRootContext(),
+		errorService:errorService,
+		logger:logger,
 	}
 }
 
@@ -156,10 +162,11 @@ func (reply *httpReply) finishReply() {
 	reader, err := reply.render.Render(reply.data)
 	if err != nil {
 		reply.SetStatusCode(500)
-		reader, _ = DefaultRenderText.Render(logger.Error("render error %#v", err))
+		reply.logger.Error("渲染错误",logs.F_Error(err))
+		reader, _ = DefaultRenderText.Render("渲染错误")
 	}
 	if reader == nil {
-		logger.Error("渲染结果为空")
+		reply.logger.Error("渲染结果为空")
 		return
 	}
 	reply.responseWriter.WriteHeader(reply.GetStatusCode())

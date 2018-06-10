@@ -1,13 +1,14 @@
 package httpx
 
 import (
-	"errors"
 	"regexp"
 	"strings"
 
 	"net/url"
 
-	"github.com/coffeehc/logger"
+	"git.xiagaogao.com/coffee/boot/errors"
+	"git.xiagaogao.com/coffee/boot/logs"
+	"go.uber.org/zap"
 )
 
 //RequestHandler 处理 Request的方法定义
@@ -23,6 +24,8 @@ type requestHandler struct {
 	exp               *regexp.Regexp
 	//用于排序后提高 request 命中率
 	//accessCount int64
+	errorService errors.Service
+	logger *zap.Logger
 }
 
 func (handler *requestHandler) doAction(reply Reply) {
@@ -30,13 +33,14 @@ func (handler *requestHandler) doAction(reply Reply) {
 	if handler.hasPathFragments {
 		u, err := url.ParseRequestURI(requestURI)
 		if err != nil {
-			logger.Error("错误的uri:%s", requestURI)
+			handler.logger.Error("错误的uri", logs.F_ExtendData(requestURI))
 			reply.SetStatusCode(500)
 			return
 		}
 		paths := strings.Split(u.Path, pathSeparator)
 		if handler.pathSize != len(paths) {
-			panic(errors.New(logger.Error("需要解析的uri[%s]不匹配定义的uri[%s]", requestURI, handler.defineURI)))
+			reply.SetStatusCode(404)
+			return
 		}
 		for name, index := range handler.uriConversions {
 			reply.AddPathFragment(name, paths[index])
@@ -53,50 +57,7 @@ func (handler *requestHandler) match(uri string) bool {
 	return handler.defineURI == uri
 }
 
-func buildRequestHandler(path string, method RequestMethod, requestHandlerFunc RequestHandler) (*requestHandler, error) {
-	if !strings.HasPrefix(path, pathSeparator) {
-		return nil, errors.New(logger.Error("定义的Uri必须是%s前缀", pathSeparator))
-	}
-	u, err := url.ParseRequestURI(path)
-	if err != nil {
-		return nil, errors.New("url格式错误")
-	}
-	paths := strings.Split(u.Path, pathSeparator)
-	uriConversions := make(map[string]int, 0)
-	conversionURI := ""
-	pathSize := 0
-	for index, p := range paths {
-		pathSize++
-		if p == "" {
-			continue
-		}
-		if strings.HasPrefix(p, wildcardPrefix) && strings.HasSuffix(p, wildcardSuffix) {
-			name := string([]byte(p)[len(wildcardPrefix) : len(p)-len(wildcardSuffix)])
-			uriConversions[name] = index
-			p = _conversion
-		}
-		conversionURI += (pathSeparator + p)
-	}
-	if conversionURI == "" {
-		conversionURI = pathSeparator
-	}
-	if strings.HasSuffix(path, pathSeparator) {
-		conversionURI += pathSeparator
-	}
-	exp, err := regexp.Compile("^" + conversionURI + "$")
-	if err != nil {
-		return nil, err
-	}
-	return &requestHandler{
-		exp:               exp,
-		method:            method,
-		defineURI:         path,
-		hasPathFragments:  len(uriConversions) > 0,
-		uriConversions:    uriConversions,
-		pathSize:          pathSize,
-		requestHandleFunc: requestHandlerFunc,
-	}, nil
-}
+
 
 type requestHandlerList []*requestHandler
 
