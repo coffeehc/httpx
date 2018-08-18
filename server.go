@@ -79,7 +79,7 @@ func (s *serverImpl) Start() <-chan errors.Error {
 	//TODO listen Option
 	if err != nil {
 		s.logger.Error("绑定监听地址失败", logs.F_ExtendData(conf.getServerAddr()))
-		errorSign <- s.errorService.WappedSystemError(err)
+		errorSign <- s.errorService.WrappedSystemError(err)
 		return errorSign
 	}
 	s.listener = &tcpKeepAliveListener{Listener: listener, keepAliveDuration: conf.getKeepAliveDuration()}

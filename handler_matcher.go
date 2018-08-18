@@ -93,7 +93,7 @@ func (impl *handlerMatcher)buildRequestHandler(path string, method RequestMethod
 	}
 	exp, err := regexp.Compile("^" + conversionURI + "$")
 	if err != nil {
-		return nil, impl.errorService.WappedSystemError(err)
+		return nil, impl.errorService.WrappedSystemError(err)
 	}
 	return &requestHandler{
 		exp:               exp,
