@@ -9,7 +9,6 @@ import (
 
 	"crypto/tls"
 	"errors"
-	"github.com/coffeehc/logger"
 	"os"
 )
 

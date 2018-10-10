@@ -33,13 +33,9 @@ func (s *MySuite) TearDownSuite(c *check.C) {
 
 func (s *MySuite) SetUpSuite(c *check.C) {
 	s.errorService = errors.NewService("test")
-	logger, _ := zap.NewDevelopment()
+	logger, _ := zap.NewDevelopment(zap.AddStacktrace(zap.DPanicLevel))
 	s.logger = logger
-	service, err := httpx.NewService(&httpx.Config{}, logger)
-	if err != nil {
-		c.Error(err)
-		c.FailNow()
-	}
+	service := httpx.NewService(&httpx.Config{}, logger)
 	s.service = service
 	service.Start(func() {
 		logger.Debug("服务器关闭")
@@ -95,9 +91,22 @@ func (s *MySuite) TestJSONRequest(c *check.C) {
 		c.String(http.StatusOK,"hi: %s\n%s",c.Param("name"),c.Query("time"))
 	})
 	param := "coffee"
-	req,_ := http.NewRequest(http.MethodGet,fmt.Sprintf("/test/v1/%s?time=%s",param,now),nil)
+	req,_ := http.NewRequest(http.MethodPost,fmt.Sprintf("/test/v1/%s?time=%s",param,now),nil)
 	rr :=httptest.NewRecorder()
 	s.service.GetGinEngine().ServeHTTP(rr,req)
 	c.Assert(rr.Code,check.Equals,http.StatusOK)
 	c.Assert(rr.Body.String(),check.Equals,fmt.Sprintf("hi: %s\n%s",param,now))
+}
+
+func (s *MySuite) TestPanicRequest(c *check.C) {
+	routerGroup := s.service.NewRouterGroup("/test")
+	v1RouterGroup := routerGroup.Group("/v1")
+	v1RouterGroup.POST("/panic", func(c *gin.Context) {
+		panic(s.errorService.MessageError("测试抛出异常"))
+	})
+	req,_ := http.NewRequest(http.MethodPost,"/test/v1/panic",nil)
+	rr :=httptest.NewRecorder()
+	s.service.GetGinEngine().ServeHTTP(rr,req)
+	c.Assert(rr.Code,check.Equals,http.StatusInternalServerError)
+	//c.Assert(rr.Body.String(),check.Equals,fmt.Sprintf("hi: %s\n%s",param,now))
 }
