@@ -24,7 +24,7 @@ func Listen(addr string)(net.Listener,error){
 	if addr == "" {
 		addr = ":http"
 	}
-	ln, err := net.Listen("tcp", addr)
+	ln, err := net.Listen("tcp4", addr)
 	if err != nil {
 		return nil,err
 	}
