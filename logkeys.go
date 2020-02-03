@@ -6,7 +6,7 @@ import (
 )
 
 func LogKeyHTTPContext(c *gin.Context,field ...zap.Field) []zap.Field{
-	baseFileds :=  []zap.Field{zap.String("http_client_ip",c.ClientIP()),zap.String("http_method",c.Request.Method),zap.String("http_path",c.Request.URL.Path)}
+	baseFileds :=  []zap.Field{zap.Int("statusCode",c.Writer.Status()),zap.String("http_client_ip",c.ClientIP()),zap.String("http_method",c.Request.Method),zap.String("http_path",c.Request.URL.Path)}
 	if len(field)>0{
 		return append(field,baseFileds...)
 	}
