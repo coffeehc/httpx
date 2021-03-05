@@ -18,6 +18,7 @@ steps:
       GOSUMDB: sum.golang.google.cn
     commands:
       - echo $USERNAME $PASSWORD
+      - cat ~/.netrc
       - ln -s /root/.netrc ~/.netrc
       - ln -s /root/.gitconfig ~/.gitconfig
       - go mod tidy
