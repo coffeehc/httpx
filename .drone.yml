@@ -25,10 +25,10 @@ steps:
   - name: build
     image: golang:latest
     environment:
-#      GOPROXY: https://goproxy.io
-#      GOPRIVATE: git.xiagaogao.com
-#      GOSUMDB: sum.golang.google.cn
-#      CGO_ENABLED: 0
+      GOPROXY: https://goproxy.io
+      GOPRIVATE: git.xiagaogao.com
+      GOSUMDB: sum.golang.google.cn
+      CGO_ENABLED: 0
     volumes:
       - name: pkgdeps
         path: /go/pkg
