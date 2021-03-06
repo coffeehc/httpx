@@ -1,32 +1,49 @@
 kind: pipeline
-type: exec
-name: build
+type: docker
+name: main
 
 platform:
   os: linux
   arch: amd64
 
 workspace:
-  base: /root/drone-go
+  base: /data/drone-go
   path: src/git.xiagaogao.com/coffee/httpx
+
+clone:
+  depth: 10
+
+volumes:
+  - name: pkgdeps
+    host:
+      path: /data/drone/gocache/pkg
+  - name: data
+    host:
+      path: /data/drone
 
 steps:
   - name: build
+    image: golang:latest
     environment:
-      GOPROXY: https://goproxy.io
-      GOPRIVATE: git.xiagaogao.com
-      GOSUMDB: sum.golang.google.cn
+#      GOPROXY: https://goproxy.io
+#      GOPRIVATE: git.xiagaogao.com
+#      GOSUMDB: sum.golang.google.cn
+#      CGO_ENABLED: 0
+    volumes:
+      - name: pkgdeps
+        path: /go/pkg
+      - name: data
+        path: /data
     commands:
-      - echo $USERNAME $PASSWORD
-      - cat /root/.netrc >> ~/.netrc
-      - ln -s /root/.gitconfig ~/.gitconfig
-      - go mod tidy
+#      - cat /data/netrc >> ~/.netrc
+#      - ln -s /data/gitconfig ~/.gitconfig
+      - go build -v
     when:
       branch:
         include:
           - feature/*
           - master
-          - dev
+          - develop
       event:
         include:
           - push
