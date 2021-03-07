@@ -11,7 +11,7 @@ workspace:
   path: src/git.xiagaogao.com/coffee/httpx
 
 clone:
-  depth: 10
+  depth: 1
 
 volumes:
   - name: pkgdeps
@@ -23,9 +23,10 @@ volumes:
 
 steps:
   - name: build
-    image: golang:latest
+    image: golang:1.16
+    pull: if-not-exists
     environment:
-      GOPROXY: https://goproxy.io
+      GOPROXY: https://goproxy.cn,direct
       GOPRIVATE: git.xiagaogao.com
       GOSUMDB: sum.golang.google.cn
       CGO_ENABLED: 0
@@ -35,8 +36,7 @@ steps:
       - name: data
         path: /data
     commands:
-#      - cat /data/netrc >> ~/.netrc
-#      - ln -s /data/gitconfig ~/.gitconfig
+      - ln -s /data/gitconfig ~/.gitconfig
       - go build -v
     when:
       branch:
@@ -48,3 +48,19 @@ steps:
         include:
           - push
           - pull_request
+  - name: notify
+    image: plugins/slack
+    pull: if-not-exists
+    settings:
+      webhook: https://hooks.slack.com/services/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
+      channel: dev
+      link_names: true
+      template: >
+        构建 git.xiagaogao.com/{{repo.owner}}/{{repo.name}} [{{build.branch}}]
+        {{build.tag}} {{build.commit}}
+        {{build.event}} #{{build.number}}
+        {{#success build.status}}
+        成功.:white_check_mark:
+        {{else}}
+        失败 :x: [{{build.link}}].
+        {{/success}}
