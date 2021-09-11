@@ -8,7 +8,7 @@ platform:
 
 workspace:
   base: /data/drone-go
-  path: src/git.xiagaogao.com/coffee/httpx
+  path: src/github.com/coffeehc/httpx
 
 clone:
   depth: 1
