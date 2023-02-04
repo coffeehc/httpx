@@ -1,53 +1,81 @@
 package httpx
 
 import (
-	"context"
 	"fmt"
+	"github.com/bytedance/sonic"
 	"github.com/coffeehc/base/log"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"net/http"
-	"time"
 )
 
 type Service interface {
 	Start(onShutdown func()) <-chan error
 	Shutdown() error
-	GetGinEngine() *gin.Engine
-	NewRouterGroup(prefix string) *gin.RouterGroup
+	GetEngine() *fiber.App
+	NewRouterGroup(prefix string) fiber.Router
 	GetServerAddress() string
 }
 
-func NewService(name string, config *Config) Service {
-	log.Debug(fmt.Sprintf("[%s]HTTP服务器配置", name), zap.Any("http_config", config))
-	gin.DisableConsoleColor()
-	gin.SetMode(gin.ReleaseMode)
+func NewService(config *Config) Service {
+	log.Debug(fmt.Sprintf("[%s]HTTP服务器配置", config.AppName))
 	if config == nil {
-		config = &Config{}
+		config = GetDefaultConfig("", "test")
 	}
-	gin.EnableJsonDecoderUseNumber()
-	engine := gin.New()
-	engine.RedirectFixedPath = true
+	engine := fiber.New(fiber.Config{
+		Prefork:               config.Prefork,
+		CaseSensitive:         config.CaseSensitive,
+		StrictRouting:         config.StrictRouting,
+		DisableStartupMessage: config.DisableStartupMessage,
+		BodyLimit:             config.getBodyLimit(),
+		Concurrency:           config.Concurrency,
+		ServerHeader:          config.ServerHeader,
+		AppName:               config.AppName,
+		JSONEncoder:           sonic.Marshal,
+		JSONDecoder:           sonic.Unmarshal,
+		ReadTimeout:           config.getReadTimeout(),
+		WriteTimeout:          config.getWriteTimeout(),
+		IdleTimeout:           config.getIdleTimeout(),
+		ReadBufferSize:        config.ReadBufferSize,
+		WriteBufferSize:       config.WriteBufferSize,
+
+		//TLSConfig: config.TLSConfig
+		//TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler)
+		//ConnState    func(net.Conn, http.ConnState)
+
+		Immutable:         config.Immutable,
+		UnescapePath:      config.UnescapePath,
+		ETag:              config.ETag,
+		ViewsLayout:       config.ViewsLayout,
+		PassLocalsToViews: config.PassLocalsToViews,
+
+		CompressedFileSuffix:         config.CompressedFileSuffix,
+		ProxyHeader:                  config.ProxyHeader,
+		GETOnly:                      config.GETOnly,
+		DisableKeepalive:             config.DisableKeepalive,
+		DisableDefaultDate:           config.DisableDefaultDate,
+		DisableDefaultContentType:    config.DisableDefaultContentType,
+		DisableHeaderNormalizing:     config.DisableHeaderNormalizing,
+		StreamRequestBody:            config.StreamRequestBody,
+		DisablePreParseMultipartForm: config.DisablePreParseMultipartForm,
+		ReduceMemoryUsage:            config.ReduceMemoryUsage,
+		Network:                      config.Network,
+		EnableTrustedProxyCheck:      config.EnableTrustedProxyCheck,
+		TrustedProxies:               config.TrustedProxies,
+		EnableIPValidation:           config.EnableIPValidation,
+		EnablePrintRoutes:            config.EnablePrintRoutes,
+	})
 	l, err := Listen(config.getServerAddr())
 	if err != nil {
-		log.Error(fmt.Sprintf("[%s]创建HTTP服务失败", name), zap.Error(err))
+		log.Error(fmt.Sprintf("[%s]创建HTTP服务失败", config.AppName), zap.Error(err))
 		return nil
 	}
 	config.ServerAddr = l.Addr().String()
 	l.Close()
-	server := &http.Server{
-		TLSConfig:    config.TLSConfig,
-		TLSNextProto: config.TLSNextProto,
-		ReadTimeout:  config.getReadTimeout(),
-		WriteTimeout: config.getWriteTimeout(),
-		Addr:         config.getServerAddr(),
-		Handler:      engine,
-	}
 	impl := &serviceImpl{
-		name:   name,
+		name:   config.AppName,
 		config: config,
 		engine: engine,
-		server: server,
 	}
 	return impl
 }
@@ -55,11 +83,10 @@ func NewService(name string, config *Config) Service {
 type serviceImpl struct {
 	name   string
 	config *Config
-	engine *gin.Engine
-	server *http.Server
+	engine *fiber.App
 }
 
-func (impl *serviceImpl) NewRouterGroup(prefix string) *gin.RouterGroup {
+func (impl *serviceImpl) NewRouterGroup(prefix string) fiber.Router {
 	return impl.engine.Group(prefix)
 }
 
@@ -68,28 +95,21 @@ func (impl *serviceImpl) GetServerAddress() string {
 }
 
 func (impl *serviceImpl) Shutdown() error {
-	ctx, _ := context.WithTimeout(context.TODO(), time.Second*30)
-	err := impl.server.Shutdown(ctx)
+	err := impl.engine.Shutdown()
 	if err != nil {
 		log.Error("关闭HttpServer失败", zap.Error(err))
 	}
 	return err
 }
 
-func (impl *serviceImpl) GetGinEngine() *gin.Engine {
+func (impl *serviceImpl) GetEngine() *fiber.App {
 	return impl.engine
 }
 
 func (impl *serviceImpl) Start(onShutdown func()) <-chan error {
 	errorSign := make(chan error, 1)
-	impl.server.RegisterOnShutdown(func() {
-		log.Debug(fmt.Sprintf("[%s]HTTP服务器关闭", impl.name))
-		if onShutdown != nil {
-			onShutdown()
-		}
-	})
 	go func() {
-		err := impl.server.ListenAndServe()
+		err := impl.engine.Listen(impl.config.getServerAddr())
 		if err != nil && err != http.ErrServerClosed {
 			log.Error(fmt.Sprintf("[%s]HTTP服务异常关闭", impl.name), zap.Error(err))
 		}

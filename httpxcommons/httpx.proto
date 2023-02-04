@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package httpx;
+
+
+option go_package = "httpxcommons";
+
+message PBResponse{
+  int64 code = 1;
+  string message = 2;
+  int64 request_id= 3;
+  bool success = 4;
+  bytes payload = 5;
+}
+
