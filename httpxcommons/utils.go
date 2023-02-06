@@ -5,10 +5,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gogo/protobuf/proto"
 	"go.uber.org/zap"
+	"strings"
 )
 
 func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
-	if c.Accepts("application/x-protobuf") != "" {
+	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		//log.Debug("+++", zap.String("Accepts", c.Accepts("application/x-protobuf")))
 		var data []byte
 		var err error
@@ -17,13 +18,13 @@ func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 			msg, ok := obj.(proto.Message)
 			if !ok {
 				//log.Error("========")
-				c.SendStatus(500)
+				c.SendStatus(fiber.StatusNotAcceptable)
 				return nil
 			}
 			data, err = proto.Marshal(msg)
 			if err != nil {
 				//log.Error("========>>>>")
-				c.SendStatus(500)
+				c.SendStatus(501)
 				return nil
 			}
 		} else {
@@ -51,7 +52,7 @@ func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 }
 
 func SendErrorWithRedirect(c *fiber.Ctx, message string, redirect string, code int64, statusCode int) error {
-	if c.Accepts("application/x-protobuf") != "" {
+	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
 			Message: message,
@@ -72,7 +73,7 @@ func SendErrorWithRedirect(c *fiber.Ctx, message string, redirect string, code i
 } //(c, "", "/user/login", 401, 401)
 
 func SendError(c *fiber.Ctx, err string, code int64, statusCode int) error {
-	if c.Accepts("application/x-protobuf") != "" {
+	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
 			Message: err,
@@ -93,7 +94,7 @@ func SendError(c *fiber.Ctx, err string, code int64, statusCode int) error {
 }
 
 func SendErrors(c *fiber.Ctx, err error, code int64, statusCode int) error {
-	if c.Accepts("application/x-protobuf") != "" {
+	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
 			Message: err.Error(),
