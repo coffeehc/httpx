@@ -8,6 +8,32 @@ import (
 	"strings"
 )
 
+func SendPBSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
+	msg, ok := obj.(proto.Message)
+	if !ok {
+		//log.Error("========")
+		c.SendStatus(fiber.StatusNotAcceptable)
+		return nil
+	}
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		//log.Error("========>>>>")
+		return err
+	}
+	resp := &PBResponse{
+		Code:    code,
+		Success: true,
+		Payload: data,
+	}
+	data, err = proto.Marshal(resp)
+	if err != nil {
+		log.Error("错误", zap.Error(err))
+		c.SendStatus(500)
+		return nil
+	}
+	return c.Status(200).BodyParser(data)
+}
+
 func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		//log.Debug("+++", zap.String("Accepts", c.Accepts("application/x-protobuf")))
@@ -38,11 +64,9 @@ func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 		data, err = proto.Marshal(resp)
 		if err != nil {
 			log.Error("错误", zap.Error(err))
-			c.SendStatus(500)
-			return nil
+			return c.SendStatus(500)
 		}
-		c.Status(200).BodyParser(data)
-		return nil
+		return c.Status(200).BodyParser(data)
 	}
 	return c.JSON(&AjaxResponse{
 		Code:    code,
