@@ -47,7 +47,6 @@ func NewService(config *Config) Service {
 		Immutable:         config.Immutable,
 		UnescapePath:      config.UnescapePath,
 		ETag:              config.ETag,
-		ViewsLayout:       config.ViewsLayout,
 		PassLocalsToViews: config.PassLocalsToViews,
 
 		CompressedFileSuffix:         config.CompressedFileSuffix,
@@ -65,6 +64,8 @@ func NewService(config *Config) Service {
 		TrustedProxies:               config.TrustedProxies,
 		EnableIPValidation:           config.EnableIPValidation,
 		EnablePrintRoutes:            config.EnablePrintRoutes,
+		Views:                        config.Views,
+		ViewsLayout:                  config.ViewsLayout,
 	})
 	l, err := Listen(config.getServerAddr())
 	if err != nil {

@@ -2,6 +2,7 @@ package httpx
 
 import (
 	"crypto/tls"
+	"github.com/gofiber/fiber/v2"
 	"net"
 	"net/http"
 	"time"
@@ -59,6 +60,8 @@ type Config struct {
 	TrustedProxies               []string `mapstructure:"trusted_proxies,omitempty" json:"trusted_proxies,omitempty"`
 	EnableIPValidation           bool     `mapstructure:"enable_ip_validation,omitempty" json:"enable_ip_validation,omitempty"`
 	EnablePrintRoutes            bool     `mapstructure:"enable_print_routes,omitempty" json:"enable_print_routes,omitempty"`
+
+	Views fiber.Views `json:"-"`
 }
 
 func (impl *Config) getBodyLimit() int {
