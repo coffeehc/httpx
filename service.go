@@ -2,9 +2,7 @@ package httpx
 
 import (
 	"fmt"
-	//"github.com/bytedance/sonic"
 	"github.com/coffeehc/base/log"
-	"github.com/coffeehc/commons/coder"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"net/http"
@@ -32,8 +30,6 @@ func NewService(config *Config) Service {
 		Concurrency:           config.Concurrency,
 		ServerHeader:          config.ServerHeader,
 		AppName:               config.AppName,
-		JSONEncoder:           coder.JsonCoder.Marshal, //sonic.Marshal,
-		JSONDecoder:           coder.JsonCoder.Unmarshal,
 		ReadTimeout:           config.getReadTimeout(),
 		WriteTimeout:          config.getWriteTimeout(),
 		IdleTimeout:           config.getIdleTimeout(),
