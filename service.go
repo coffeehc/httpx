@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/coffeehc/base/log"
 	"github.com/gofiber/fiber/v2"
@@ -10,6 +11,7 @@ import (
 
 type Service interface {
 	Start(onShutdown func()) <-chan error
+	StartWithCertificate(cert tls.Certificate, onShutdown func()) <-chan error
 	Shutdown() error
 	GetEngine() *fiber.App
 	NewRouterGroup(prefix string) fiber.Router
@@ -62,6 +64,7 @@ func NewService(config *Config) Service {
 		EnablePrintRoutes:            config.EnablePrintRoutes,
 		Views:                        config.Views,
 		ViewsLayout:                  config.ViewsLayout,
+		ErrorHandler:                 config.ErrorHandler,
 	})
 	l, err := Listen(config.getServerAddr())
 	if err != nil {
@@ -108,6 +111,20 @@ func (impl *serviceImpl) Start(onShutdown func()) <-chan error {
 	errorSign := make(chan error, 1)
 	go func() {
 		err := impl.engine.Listen(impl.config.getServerAddr())
+		if err != nil && err != http.ErrServerClosed {
+			log.Error(fmt.Sprintf("[%s]HTTP服务异常关闭", impl.name), zap.Error(err))
+		}
+		log.Debug(fmt.Sprintf("[%s]HTTP服务关闭", impl.name))
+		errorSign <- err
+	}()
+	log.Debug(fmt.Sprintf("[%s]HTTP服务启动", impl.name), zap.String("address", impl.config.getServerAddr()))
+	return errorSign
+}
+
+func (impl *serviceImpl) StartWithCertificate(cert tls.Certificate, onShutdown func()) <-chan error {
+	errorSign := make(chan error, 1)
+	go func() {
+		err := impl.engine.ListenTLSWithCertificate(impl.config.getServerAddr(), cert)
 		if err != nil && err != http.ErrServerClosed {
 			log.Error(fmt.Sprintf("[%s]HTTP服务异常关闭", impl.name), zap.Error(err))
 		}

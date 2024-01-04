@@ -61,7 +61,8 @@ type Config struct {
 	EnableIPValidation           bool     `mapstructure:"enable_ip_validation,omitempty" json:"enable_ip_validation,omitempty"`
 	EnablePrintRoutes            bool     `mapstructure:"enable_print_routes,omitempty" json:"enable_print_routes,omitempty"`
 
-	Views fiber.Views `json:"-"`
+	Views        fiber.Views `json:"-"`
+	ErrorHandler fiber.ErrorHandler
 }
 
 func (impl *Config) getBodyLimit() int {
