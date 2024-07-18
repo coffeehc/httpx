@@ -3,7 +3,7 @@ syntax = "proto3";
 package httpx;
 
 
-option go_package = "httpxcommons";
+option go_package = "./httpxcommons";
 
 message PBResponse{
   int64 code = 1;

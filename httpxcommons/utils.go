@@ -1,10 +1,11 @@
 package httpxcommons
 
 import (
+	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gogo/protobuf/proto"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 	"strings"
 )
 
@@ -118,10 +119,14 @@ func SendError(c *fiber.Ctx, err string, code int64, statusCode int) error {
 }
 
 func SendErrors(c *fiber.Ctx, err error, code int64, statusCode int) error {
+	message := err.Error()
+	if errors.IsSystemError(err) || errors.IsDBError(err) {
+		message = "系统内部错误"
+	}
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
-			Message: err.Error(),
+			Message: message,
 		}
 		data, err := proto.Marshal(resp)
 		if err != nil {
@@ -130,8 +135,9 @@ func SendErrors(c *fiber.Ctx, err error, code int64, statusCode int) error {
 		}
 		return c.Status(statusCode).Send(data)
 	}
+
 	return c.Status(statusCode).JSON(&AjaxResponse{
 		Code:    code,
-		Message: err.Error(),
+		Message: message,
 	})
 }
