@@ -3,6 +3,7 @@ package httpxcommons
 import (
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"strings"
