@@ -3,13 +3,13 @@ package httpxcommons
 import (
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"strings"
 )
 
-func SendPBSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
+func SendPBSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	msg, ok := obj.(proto.Message)
 	if !ok {
 		//log.Error("========")
@@ -32,10 +32,10 @@ func SendPBSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 		c.SendStatus(500)
 		return nil
 	}
-	return c.Status(200).BodyParser(data)
+	return c.Status(200).Send(data)
 }
 
-func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
+func SendSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		//log.Debug("+++", zap.String("Accepts", c.Accepts("application/x-protobuf")))
 		var data []byte
@@ -67,7 +67,7 @@ func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 			log.Error("错误", zap.Error(err))
 			return c.SendStatus(500)
 		}
-		return c.Status(200).BodyParser(data)
+		return c.Status(200).Send(data)
 	}
 	return c.JSON(&AjaxResponse{
 		Code:    code,
@@ -76,7 +76,7 @@ func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 	})
 }
 
-func SendErrorWithRedirect(c *fiber.Ctx, message string, redirect string, code int64, statusCode int) error {
+func SendErrorWithRedirect(c fiber.Ctx, message string, redirect string, code int64, statusCode int) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
@@ -97,7 +97,7 @@ func SendErrorWithRedirect(c *fiber.Ctx, message string, redirect string, code i
 	})
 } //(c, "", "/user/login", 401, 401)
 
-func SendError(c *fiber.Ctx, err string, code int64, statusCode int) error {
+func SendError(c fiber.Ctx, err string, code int64, statusCode int) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
@@ -118,7 +118,7 @@ func SendError(c *fiber.Ctx, err string, code int64, statusCode int) error {
 	})
 }
 
-func SendErrors(c *fiber.Ctx, err error, code int64, statusCode int) error {
+func SendErrors(c fiber.Ctx, err error, code int64, statusCode int) error {
 	message := err.Error()
 	if errors.IsSystemError(err) || errors.IsDBError(err) {
 		message = "系统内部错误"
