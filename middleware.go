@@ -5,14 +5,14 @@ import (
 	es "errors"
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
-	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"strings"
 	"time"
 )
 
 func AccessLogMiddleware() fiber.Handler {
-	return func(c fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
 		t := time.Now()
 		e := c.Next()
 		if e == nil {
@@ -25,7 +25,7 @@ func AccessLogMiddleware() fiber.Handler {
 }
 
 func RecoverMiddleware(t time.Duration) fiber.Handler {
-	return func(c fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
 		timeoutContext, cancel := context.WithTimeout(c.UserContext(), t)
 		defer func() {
 			cancel()

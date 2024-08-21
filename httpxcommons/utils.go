@@ -3,13 +3,12 @@ package httpxcommons
 import (
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
-	"github.com/gofiber/fiber/v3"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"strings"
 )
 
-func SendPBSuccess(c fiber.Ctx, obj interface{}, code int64) error {
+func SendPBSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 	msg, ok := obj.(proto.Message)
 	if !ok {
 		//log.Error("========")
