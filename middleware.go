@@ -3,16 +3,17 @@ package httpx
 import (
 	"context"
 	es "errors"
-	"github.com/coffeehc/base/errors"
-	"github.com/coffeehc/base/log"
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"strings"
 	"time"
+
+	"github.com/coffeehc/base/errors"
+	"github.com/coffeehc/base/log"
+	"github.com/gofiber/fiber/v3"
+	"go.uber.org/zap"
 )
 
 func AccessLogMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		t := time.Now()
 		e := c.Next()
 		if e == nil {
@@ -25,8 +26,8 @@ func AccessLogMiddleware() fiber.Handler {
 }
 
 func RecoverMiddleware(t time.Duration) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		timeoutContext, cancel := context.WithTimeout(c.UserContext(), t)
+	return func(c fiber.Ctx) error {
+		timeoutContext, cancel := context.WithTimeout(c.Context(), t)
 		defer func() {
 			cancel()
 			if err := recover(); err != nil {
@@ -48,7 +49,7 @@ func RecoverMiddleware(t time.Duration) fiber.Handler {
 				c.SendStatus(500)
 			}
 		}()
-		c.SetUserContext(timeoutContext)
+		c.SetContext(timeoutContext)
 		err := c.Next()
 		if err != nil {
 			if es.Is(err, context.DeadlineExceeded) {

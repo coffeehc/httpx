@@ -3,10 +3,11 @@ package httpx
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/coffeehc/base/log"
-	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"net/http"
+
+	"github.com/coffeehc/base/log"
+	"github.com/gofiber/fiber/v3"
+	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -24,30 +25,27 @@ func NewService(config *Config) Service {
 		config = GetDefaultConfig("", "test")
 	}
 	engine := fiber.New(fiber.Config{
-		Prefork:               config.Prefork,
-		CaseSensitive:         config.CaseSensitive,
-		StrictRouting:         config.StrictRouting,
-		DisableStartupMessage: config.DisableStartupMessage,
-		BodyLimit:             config.getBodyLimit(),
-		Concurrency:           config.Concurrency,
-		ServerHeader:          config.ServerHeader,
-		AppName:               config.AppName,
-		ReadTimeout:           config.getReadTimeout(),
-		WriteTimeout:          config.getWriteTimeout(),
-		IdleTimeout:           config.getIdleTimeout(),
-		ReadBufferSize:        config.ReadBufferSize,
-		WriteBufferSize:       config.WriteBufferSize,
+		CaseSensitive:   config.CaseSensitive,
+		StrictRouting:   config.StrictRouting,
+		BodyLimit:       config.getBodyLimit(),
+		Concurrency:     config.Concurrency,
+		ServerHeader:    config.ServerHeader,
+		AppName:         config.AppName,
+		ReadTimeout:     config.getReadTimeout(),
+		WriteTimeout:    config.getWriteTimeout(),
+		IdleTimeout:     config.getIdleTimeout(),
+		ReadBufferSize:  config.ReadBufferSize,
+		WriteBufferSize: config.WriteBufferSize,
 
-		//TLSConfig: config.TLSConfig
-		//TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler)
-		//ConnState    func(net.Conn, http.ConnState)
+		// TLSConfig: config.TLSConfig
+		// TLSNextProto map[string]func(*http.Server, *tls.Conn, http.Handler)
+		// ConnState    func(net.Conn, http.ConnState)
 
 		Immutable:         config.Immutable,
 		UnescapePath:      config.UnescapePath,
-		ETag:              config.ETag,
 		PassLocalsToViews: config.PassLocalsToViews,
 
-		CompressedFileSuffix:         config.CompressedFileSuffix,
+		CompressedFileSuffixes:       config.CompressedFileSuffix,
 		ProxyHeader:                  config.ProxyHeader,
 		GETOnly:                      config.GETOnly,
 		DisableKeepalive:             config.DisableKeepalive,
@@ -57,11 +55,7 @@ func NewService(config *Config) Service {
 		StreamRequestBody:            config.StreamRequestBody,
 		DisablePreParseMultipartForm: config.DisablePreParseMultipartForm,
 		ReduceMemoryUsage:            config.ReduceMemoryUsage,
-		Network:                      config.Network,
-		EnableTrustedProxyCheck:      config.EnableTrustedProxyCheck,
-		TrustedProxies:               config.TrustedProxies,
 		EnableIPValidation:           config.EnableIPValidation,
-		EnablePrintRoutes:            config.EnablePrintRoutes,
 		Views:                        config.Views,
 		ViewsLayout:                  config.ViewsLayout,
 		ErrorHandler:                 config.ErrorHandler,
@@ -124,7 +118,10 @@ func (impl *serviceImpl) Start(onShutdown func()) <-chan error {
 func (impl *serviceImpl) StartWithCertificate(cert tls.Certificate, onShutdown func()) <-chan error {
 	errorSign := make(chan error, 1)
 	go func() {
-		err := impl.engine.ListenTLSWithCertificate(impl.config.getServerAddr(), cert)
+		err := impl.engine.Listen(impl.config.getServerAddr(), fiber.ListenConfig{TLSConfigFunc: func(tlsConfig *tls.Config) {
+			tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
+		}})
+		// err := impl.engine.ListenTLSWithCertificate(impl.config.getServerAddr(), cert)
 		if err != nil && err != http.ErrServerClosed {
 			log.Error(fmt.Sprintf("[%s]HTTP服务异常关闭", impl.name), zap.Error(err))
 		}

@@ -1,24 +1,25 @@
 package httpxcommons
 
 import (
+	"strings"
+
 	"github.com/coffeehc/base/errors"
 	"github.com/coffeehc/base/log"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
-	"strings"
 )
 
-func SendPBSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
+func SendPBSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	msg, ok := obj.(proto.Message)
 	if !ok {
-		//log.Error("========")
+		// log.Error("========")
 		c.SendStatus(fiber.StatusNotAcceptable)
 		return nil
 	}
 	data, err := proto.Marshal(msg)
 	if err != nil {
-		//log.Error("========>>>>")
+		// log.Error("========>>>>")
 		return err
 	}
 	resp := &PBResponse{
@@ -35,22 +36,22 @@ func SendPBSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 	return c.Status(200).Send(data)
 }
 
-func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
+func SendSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
-		//log.Debug("+++", zap.String("Accepts", c.Accepts("application/x-protobuf")))
+		// log.Debug("+++", zap.String("Accepts", c.Accepts("application/x-protobuf")))
 		var data []byte
 		var err error
 		message, ok := obj.(string)
 		if !ok {
 			msg, ok := obj.(proto.Message)
 			if !ok {
-				//log.Error("========")
+				// log.Error("========")
 				c.SendStatus(fiber.StatusNotAcceptable)
 				return nil
 			}
 			data, err = proto.Marshal(msg)
 			if err != nil {
-				//log.Error("========>>>>")
+				// log.Error("========>>>>")
 				c.SendStatus(501)
 				return nil
 			}
@@ -76,7 +77,7 @@ func SendSuccess(c *fiber.Ctx, obj interface{}, code int64) error {
 	})
 }
 
-func SendErrorWithRedirect(c *fiber.Ctx, message string, redirect string, code int64, statusCode int) error {
+func SendErrorWithRedirect(c fiber.Ctx, message string, redirect string, code int64, statusCode int) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
@@ -95,9 +96,9 @@ func SendErrorWithRedirect(c *fiber.Ctx, message string, redirect string, code i
 		Message:  message,
 		Redirect: redirect,
 	})
-} //(c, "", "/user/login", 401, 401)
+} // (c, "", "/user/login", 401, 401)
 
-func SendError(c *fiber.Ctx, err string, code int64, statusCode int) error {
+func SendError(c fiber.Ctx, err string, code int64, statusCode int) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
 			Code:    code,
@@ -118,7 +119,7 @@ func SendError(c *fiber.Ctx, err string, code int64, statusCode int) error {
 	})
 }
 
-func SendErrors(c *fiber.Ctx, err error, code int64, statusCode int) error {
+func SendErrors(c fiber.Ctx, err error, code int64, statusCode int) error {
 	message := err.Error()
 	if errors.IsSystemError(err) || errors.IsDBError(err) {
 		message = "系统内部错误"
