@@ -37,7 +37,7 @@ func SendPBSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 }
 
 func SendSuccess(c fiber.Ctx, obj interface{}, code int64) error {
-	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
+	if c.AcceptsEncodings("application/x-protobuf") != "" {
 		// log.Debug("+++", zap.String("Accepts", c.Accepts("application/x-protobuf")))
 		var data []byte
 		var err error
