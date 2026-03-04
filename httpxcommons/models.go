@@ -29,15 +29,15 @@ func (a *AjaxResponse) GetCode() int64 {
 }
 
 type AjaxResponse struct {
-	Success   bool        `json:"success"`
-	Message   string      `json:"message"`
-	Payload   interface{} `json:"payload"`
-	RequestID string      `json:"request_id"`
-	Code      int64       `json:"code"`
-	Redirect  string      `json:"redirect,omitempty"`
+	Success   bool   `json:"success"`
+	Message   string `json:"message"`
+	Payload   any    `json:"payload"`
+	RequestID string `json:"request_id"`
+	Code      int64  `json:"code"`
+	Redirect  string `json:"redirect,omitempty"`
 }
 
-type ListData struct {
-	List  interface{} `json:"list"`
-	Total int64       `json:"total"`
+type ListData[T comparable] struct {
+	List  []T   `json:"list"`
+	Total int64 `json:"total"`
 }
