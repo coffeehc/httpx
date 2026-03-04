@@ -37,7 +37,7 @@ type AjaxResponse struct {
 	Redirect  string `json:"redirect,omitempty"`
 }
 
-type ListData[T comparable] struct {
+type ListData[T any] struct {
 	List  []T   `json:"list"`
 	Total int64 `json:"total"`
 }
