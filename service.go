@@ -118,10 +118,12 @@ func (impl *serviceImpl) Start(onShutdown func()) <-chan error {
 func (impl *serviceImpl) StartWithCertificate(cert tls.Certificate, onShutdown func()) <-chan error {
 	errorSign := make(chan error, 1)
 	go func() {
-		err := impl.engine.Listen(impl.config.getServerAddr(), fiber.ListenConfig{TLSConfigFunc: func(tlsConfig *tls.Config) {
-			tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
+		// TLSConfigFunc only customizes an already-enabled TLS listener. Supplying
+		// the complete configuration is required when the certificate is in memory.
+		err := impl.engine.Listen(impl.config.getServerAddr(), fiber.ListenConfig{TLSConfig: &tls.Config{
+			MinVersion:   tls.VersionTLS12,
+			Certificates: []tls.Certificate{cert},
 		}})
-		// err := impl.engine.ListenTLSWithCertificate(impl.config.getServerAddr(), cert)
 		if err != nil && err != http.ErrServerClosed {
 			log.Error(fmt.Sprintf("[%s]HTTP服务异常关闭", impl.name), zap.Error(err))
 		}
