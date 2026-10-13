@@ -10,6 +10,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// SendPBSuccess 保留已发布 httpx 的响应行为。
+// Deprecated: 新 Web/API 代码统一使用 github.com/coffeehc/commons/webfacade。
 func SendPBSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	msg, ok := obj.(proto.Message)
 	if !ok {
@@ -36,6 +38,8 @@ func SendPBSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	return c.Status(200).Send(data)
 }
 
+// SendSuccess 保留已发布 httpx 的响应行为。
+// Deprecated: 新 Web/API 代码统一使用 github.com/coffeehc/commons/webfacade。
 func SendSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	if c.Accepts("application/x-protobuf") != "" {
 		if msg, ok := obj.(proto.Message); ok {
@@ -65,6 +69,8 @@ func SendSuccess(c fiber.Ctx, obj interface{}, code int64) error {
 	})
 }
 
+// SendErrorWithRedirect 保留已发布 httpx 的响应行为。
+// Deprecated: 新 Web/API 代码统一使用 github.com/coffeehc/commons/webfacade。
 func SendErrorWithRedirect(c fiber.Ctx, message string, redirect string, code int64, statusCode int) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
@@ -86,6 +92,8 @@ func SendErrorWithRedirect(c fiber.Ctx, message string, redirect string, code in
 	})
 } // (c, "", "/user/login", 401, 401)
 
+// SendError 保留已发布 httpx 的响应行为。
+// Deprecated: 新 Web/API 代码统一使用 github.com/coffeehc/commons/webfacade。
 func SendError(c fiber.Ctx, err string, code int64, statusCode int) error {
 	if !strings.Contains(c.Get(fiber.HeaderAccept), "*/*") && c.Accepts("application/x-protobuf") != "" {
 		resp := &PBResponse{
@@ -107,6 +115,8 @@ func SendError(c fiber.Ctx, err string, code int64, statusCode int) error {
 	})
 }
 
+// SendErrors 保留已发布 httpx 的响应行为。
+// Deprecated: 新 Web/API 代码统一使用 github.com/coffeehc/commons/webfacade。
 func SendErrors(c fiber.Ctx, err error, code int64, statusCode int) error {
 	message := err.Error()
 	if errors.IsSystemError(err) || errors.IsDBError(err) {
